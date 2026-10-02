@@ -18,6 +18,25 @@ import com.rikkaminis.app.data.model.LLMMessage
  */
 
 /**
+ * [fix/compact-cancel-on-stop-1002] Queue-drain deference predicate for
+ * [ChatViewModel.resumeQueueAfterCancel]: defer ONLY while a compact is
+ * genuinely in flight, proceed once it is gone.
+ *
+ * Before the compact had a cancel entry, "compacting" implied a live compact
+ * whose success tail would re-kick the drain, so deferring on the
+ * `_isCompacting` flag alone was safe. With stop able to cancel the compact,
+ * the flag's reset is asynchronous (the cancelled job's finally runs on the
+ * IO dispatcher) and the success kick never comes — deferring on the stale
+ * flag would stall a pending queue forever (no loop is running to re-trigger
+ * it). A null [compactJobActive] means the compact came from an unknown path;
+ * keep the old conservative defer in that case.
+ */
+internal fun queueDrainShouldDeferForCompact(
+    isCompacting: Boolean,
+    compactJobActive: Boolean?,
+): Boolean = isCompacting && compactJobActive != false
+
+/**
  * Resolves the compact anchor index within [history].
  *
  * Mirrors iOS `AIChatViewModel+Compaction.swift` tail-walk-back logic:
