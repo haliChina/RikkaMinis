@@ -285,8 +285,9 @@ internal fun ChatViewModel.compactAll(
                 chatRepository.dao.loadMessages(sid).map { it.id }.toSet()
             } catch (e: CancellationException) {
                 // [fix/clearchat-compact-ce-1002] A stop press cancels
-                // compactJob (fix/compact-cancel-on-stop-1002) and this read
-                // is the first suspend point inside the compact launch —
+                // compactJob (fix/compact-cancel-on-stop-1002). The summary
+                // LLM call is the first suspend point and usually unwinds
+                // first, but a cancel can also land on this read —
                 // swallowing CE here would misreport cancellation as "DB
                 // verify failed" and fall back to the in-memory anchor,
                 // continuing a cancelled compact on stale state. Rethrow so

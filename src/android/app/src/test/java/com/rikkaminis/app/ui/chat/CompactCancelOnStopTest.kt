@@ -153,9 +153,16 @@ class CompactCancelOnStopTest {
         val kill = body.indexOf("compactJob?.cancel()")
         assertTrue("clearChat missing the streaming guard", guard >= 0)
         assertTrue("clearChat missing compactJob cancel", kill >= 0)
-        // The kill is unconditional (function level, after the single-line
-        // guard) — not nested inside an if that only fires while streaming.
+        // The kill comes after the guard — this is an ordering assertion
+        // only; source-text tests cannot detect nesting.
         assertTrue("compact kill must come after the streaming guard", guard < kill)
+        // The stale summary must be reset alongside the marker: a fresh
+        // compact on the new chat would otherwise merge the wiped
+        // transcript's summary back in ("revived" old messages).
+        assertTrue(
+            "clearChat must reset the stale compact summary",
+            body.contains("_compactSummary.value = null"),
+        )
     }
 
     @Test

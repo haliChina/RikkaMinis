@@ -2639,6 +2639,12 @@ class ChatViewModel(
         agentHistory.clear()
         _error.value = null
         _cachedLatestMarker = null
+        // [fix/clearchat-compact-ce-1002] The marker alone isn't enough: a
+        // stale summary would survive here, and a fresh compact on the new
+        // chat would merge("Previous context summary: <old>", …) — the
+        // wiped transcript leaking back in through the new marker. Reset
+        // both; the next turn re-evaluates pressure from live state.
+        _compactSummary.value = null
         toolLoopDetector.reset()
         _canResume.value = false
         _attachments.value = emptyList()
