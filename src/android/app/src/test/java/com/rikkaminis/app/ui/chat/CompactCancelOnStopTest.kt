@@ -100,13 +100,28 @@ class CompactCancelOnStopTest {
             "marker insert still swallows cancellation via runCatching",
             lifecycle.contains("runCatching { chatRepository.dao.insertCompactMarker"),
         )
-        val rethrow = lifecycle.indexOf("chatRepository.dao.insertCompactMarker(marker)")
+        // Region-bounded: the marker insert's OWN try/catch must rethrow CE.
+        // A file-global indexOf("catch (e: CancellationException)") is an
+        // across-constructs order assertion — the raw-id verify rethrow
+        // (fix/clearchat-compact-ce-1002) legitimately precedes the marker
+        // insert in the same file and broke the old pin (CI run 36980256369
+        // caught it). Same shape as the raw-id verify pin below.
+        val markerRegion = lifecycle
+            .substringAfter("val markerSaved = try {")
+            .substringBefore("if (!markerSaved)")
+        val rethrow = markerRegion.indexOf("chatRepository.dao.insertCompactMarker(marker)")
         assertTrue("marker insert call missing", rethrow >= 0)
-        val rethrowCatch = lifecycle.indexOf("catch (e: CancellationException)")
+        val rethrowCatch = markerRegion.indexOf("catch (e: CancellationException)")
         assertTrue("cancellation rethrow missing", rethrowCatch >= 0)
         // Sequence: the guarded call first, its rethrowing catch after —
         // i.e. the same try/catch region, not two unrelated constructs.
         assertTrue(rethrow < rethrowCatch)
+        // The CE arm must actually rethrow, not swallow.
+        val ceArm = markerRegion.substring(
+            rethrowCatch,
+            markerRegion.indexOf("catch (e: Exception)"),
+        )
+        assertTrue("CE arm does not rethrow", ceArm.contains("throw e"))
     }
 
     @Test
