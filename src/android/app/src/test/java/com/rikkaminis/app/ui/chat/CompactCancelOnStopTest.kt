@@ -123,6 +123,49 @@ class CompactCancelOnStopTest {
         )
     }
 
+    @Test
+    fun `clearChat kills the compact even when no stream is active`() {
+        // [fix/clearchat-compact-ce-1002] The old guard `if (_isStreaming.value)
+        // cancelStream()` only killed the compact when a stream was alive; a
+        // stream-less auto-compact survived the wipe and its commit block then
+        // wrote marker + summary over the cleared session (old messages
+        // "revived" as compacted history of the fresh chat).
+        val vm = readRepoFile("app/src/main/java/com/rikkaminis/app/ui/chat/ChatViewModel.kt")
+        val body = vm
+            .substringAfter("fun clearChat() {")
+            .substringBefore("Share Injection")
+        val guard = body.indexOf("if (_isStreaming.value) cancelStream()")
+        val kill = body.indexOf("compactJob?.cancel()")
+        assertTrue("clearChat missing the streaming guard", guard >= 0)
+        assertTrue("clearChat missing compactJob cancel", kill >= 0)
+        // The kill is unconditional (function level, after the single-line
+        // guard) — not nested inside an if that only fires while streaming.
+        assertTrue("compact kill must come after the streaming guard", guard < kill)
+    }
+
+    @Test
+    fun `compact raw-id verify rethrows cancellation before the generic catch`() {
+        // [fix/clearchat-compact-ce-1002] Same-family completion of
+        // [fix/compact-cancel-on-stop-1002]: the raw-id DB verify is a suspend
+        // point inside the cancellable compact launch. With stop now able to
+        // cancel compactJob, a plain catch(Exception) would swallow the
+        // CancellationException, log "verify failed", and fall back to the
+        // in-memory anchor — continuing a cancelled compact. Kotlin catch
+        // chains are ordered, so the CancellationException arm MUST precede
+        // the generic arm (Exception would otherwise win and re-swallow).
+        val lifecycle = readRepoFile(
+            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+        )
+        val region = lifecycle
+            .substringAfter("chatRepository.dao.loadMessages(sid).map { it.id }.toSet()")
+            .substringBefore("verifiedAnchorIdx")
+        val ce = region.indexOf("catch (e: CancellationException)")
+        val generic = region.indexOf("catch (e: Exception)")
+        assertTrue("raw-id verify missing CancellationException rethrow", ce >= 0)
+        assertTrue("raw-id verify missing generic catch", generic >= 0)
+        assertTrue("CE arm must precede the Exception arm or it gets swallowed", ce < generic)
+    }
+
     /**
      * Walk up from the test working directory to the repo root containing
      * [relative]. Gradle sets user.dir to the module dir (`.../src/android/app`),

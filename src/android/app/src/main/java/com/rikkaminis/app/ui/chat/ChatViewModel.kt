@@ -2612,6 +2612,20 @@ class ChatViewModel(
      */
     fun clearChat() {
         if (_isStreaming.value) cancelStream()
+        // [fix/clearchat-compact-ce-1002] A compact with NO active stream
+        // survives the guard above (cancelStream is only wired to the
+        // streaming branch): its summary generation keeps burning tokens for
+        // up to the ~120s budget while the wipe below deletes the session,
+        // and the commit block then writes insertCompactMarker +
+        // _compactSummary/_cachedLatestMarker over the wiped session — the
+        // deleted transcript's summary becomes the context of the fresh
+        // chat (old messages "revived" as compacted history). Cancellation
+        // is safe by construction: see the compactJob KDoc — the pipeline
+        // rethrows CE and nothing is persisted before the commit block, so
+        // a cancelled compact leaves zero trace; the next turn re-evaluates
+        // context pressure from live state and re-fires a fresh compact if
+        // still needed.
+        compactJob?.cancel()
         val sid = activeSessionId
         // T-streaming-side-channel: ensure no stale stream delta survives a
         // session wipe; the messages list is about to be cleared, so any

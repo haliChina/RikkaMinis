@@ -283,6 +283,16 @@ internal fun ChatViewModel.compactAll(
             // both non-empty AND present in rawDbIds.
             val rawDbIds: Set<String> = try {
                 chatRepository.dao.loadMessages(sid).map { it.id }.toSet()
+            } catch (e: CancellationException) {
+                // [fix/clearchat-compact-ce-1002] A stop press cancels
+                // compactJob (fix/compact-cancel-on-stop-1002) and this read
+                // is the first suspend point inside the compact launch —
+                // swallowing CE here would misreport cancellation as "DB
+                // verify failed" and fall back to the in-memory anchor,
+                // continuing a cancelled compact on stale state. Rethrow so
+                // the coroutine unwinds exactly like every other cancel
+                // point; other failures keep the best-effort semantics.
+                throw e
             } catch (e: Exception) {
                 Log.w(ChatViewModel.TAG, "[Compact] loadMessages for raw-id verify failed: ${e.message}")
                 emptySet()
