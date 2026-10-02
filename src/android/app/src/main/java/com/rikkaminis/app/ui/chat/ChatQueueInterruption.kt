@@ -447,7 +447,12 @@ internal fun ChatViewModel.resumeQueueAfterCancel() {
         // Safe to just return: every SUCCESSFUL compact re-kicks this
         // function from its own tail, so a deferred drain is never lost
         // (and a failed compact leaves the queue pending by design).
-        if (_isCompacting.value) {
+        // [fix/compact-cancel-on-stop-1002] …except when the in-flight
+        // compact was just cancelled by this stop: it never reaches its
+        // success kick, so deferring on the stale _isCompacting flag would
+        // stall the drain forever. Predicate is a top-level pure function —
+        // see queueDrainShouldDeferForCompact for the null case.
+        if (queueDrainShouldDeferForCompact(_isCompacting.value, compactJob?.isActive)) {
             AppLogger.info(ChatViewModel.TAG, "resumeQueueAfterCancel: compact in flight — deferring to its completion kick")
             return@launch
         }

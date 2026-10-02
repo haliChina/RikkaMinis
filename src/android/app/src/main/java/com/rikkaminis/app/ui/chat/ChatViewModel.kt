@@ -1129,6 +1129,29 @@ class ChatViewModel(
     // streaming, hiding the Stop button while the new turn was live).
     @Volatile
     internal var streamJob: Job? = null
+    // [fix/compact-cancel-on-stop-1002] The auto-compact coroutine's job.
+    // compactAll() launches fire-and-forget on Dispatchers.IO; without a
+    // stored reference nothing could cancel it — a stop press left the
+    // summary call burning tokens in the background for up to ~2 min
+    // (2026-10-01 14:43:48 stop → 14:45:56 "11 UI bubbles folded"). The
+    // CancellationException path is safe by construction: the compact
+    // pipeline rethrows it everywhere and nothing is persisted before the
+    // commit block, so a cancelled compact leaves zero trace (no marker,
+    // no folded bubbles).
+    @Volatile
+    internal var compactJob: Job? = null
+    // [fix/compact-cancel-on-stop-1002] sendMessage's outer shell job. The
+    // shell awaits the auto-compact BEFORE streamJob is assigned, so during
+    // that window (up to AUTO_COMPACT_MAX_WAIT_MS = 120s) streamJob is
+    // null/stale and a stop press reached nothing — the shell then went on
+    // to persist and send the user's message anyway ("zombie send", seen in
+    // the 2026-10-01 logs: stop at 14:43:48, "timed out waiting for compact;
+    // sending without it" at 14:45:34). The agent-loop streamJob is a CHILD
+    // of this job, so cancelling the shell also cancels the stream;
+    // streamJob?.cancel() stays because retry/rerun/resume/queue-drain
+    // launch streamJob directly from other scopes.
+    @Volatile
+    internal var sendShellJob: Job? = null
     internal var currentProvider: LLMProvider? = null
     internal var currentModel: LLMModel? = null
 
@@ -3401,7 +3424,12 @@ class ChatViewModel(
         val editingId = _editingMessageId.value
         if (editingId != null) _editingMessageId.value = null
 
-        viewModelScope.launch(Dispatchers.IO) {
+        // [fix/compact-cancel-on-stop-1002] Store the shell job so
+        // cancelStream can kill the whole turn (see sendShellJob KDoc):
+        // during the compact-wait window streamJob is not yet assigned, so
+        // streamJob?.cancel() alone reached nothing — the shell kept waiting
+        // and then sent the message anyway ("zombie send").
+        sendShellJob = viewModelScope.launch(Dispatchers.IO) {
             var streamLaunched = false
             try {
             // [T5-auto-compact] If maybeTriggerAutoCompact() fired a compact
@@ -3647,6 +3675,19 @@ class ChatViewModel(
         AppLogger.info(TAG_STREAM, "cancelStream invoked _isStreaming=false (sid=$activeSessionId)")
         val epochAtCancel = streamEpoch
         streamJob?.cancel()
+        // [fix/compact-cancel-on-stop-1002] Stop is a full-turn stop: the
+        // in-flight auto-compact dies with the stream (it is turn-scoped
+        // side work — silent, invisible, still burning tokens for up to the
+        // 120s summary budget), and the send shell dies so a message held in
+        // the compact-wait window is never persisted+sent after the stop
+        // ("zombie send"). Uniform across cancelStream callers: every caller
+        // (stop button, notification onStop, mid-stream preempt, clearChat,
+        // headless teardown) means "this turn's work stops NOW", and a
+        // killed compact is always safe (nothing persisted before the commit
+        // block) — the next turn re-evaluates context pressure from live
+        // state and re-fires a fresh compact if still needed.
+        compactJob?.cancel()
+        sendShellJob?.cancel()
         // [audit-0917] Guard the flag with the same epoch discipline every
         // other clear site uses (rerunFromToolBlock / retry / resume finally
         // blocks all compare sendEpoch == streamingClaimEpoch). An
