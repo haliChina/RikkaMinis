@@ -176,7 +176,8 @@ object ConfigBackup {
         val sections = buildSections(
             providerRepo, includeSecrets, envVarRepo, skillRepo, memoryRepo,
             mcpRepo, chatRepo, chatWindowDays, artifactRoots,
-        ).copy(scheduledTasks = scheduledTasks)
+            scheduledTasks = scheduledTasks,
+        )
         val payload = buildPayloadObject(sections, includeSecrets, webDavConfig).toString()
         // [T-backup-export-size-cap] Enforce the same ceiling on the export
         // side that import already checks (MAX_PAYLOAD_BYTES). With the byte
@@ -266,7 +267,8 @@ object ConfigBackup {
         val sections = buildSections(
             providerRepo, includeSecrets, envVarRepo, skillRepo, memoryRepo,
             mcpRepo, chatRepo, chatWindowDays, artifactRoots,
-        ).copy(scheduledTasks = scheduledTasks)
+            scheduledTasks = scheduledTasks,
+        )
         // The skeleton is the SAME tree the String path builds, minus the chat
         // arrays: buildPayloadObject is the single source of truth for field
         // set and order, so the two paths cannot drift. JSONArray(Collection)
@@ -339,6 +341,7 @@ object ConfigBackup {
         chatRepo: ChatRepository? = null,
         chatWindowDays: Int = 90,
         artifactRoots: List<File>? = null,
+        scheduledTasks: JSONObject? = null,
     ): ExportSections {
         val registry = ConfigRegistry.get()
 
@@ -713,6 +716,7 @@ object ConfigBackup {
             chatSessions = chatSessionList,
             chatMessages = chatMessageList,
             chatTruncated = chatTruncated,
+            scheduledTasks = scheduledTasks,
         )
     }
 
