@@ -1,6 +1,6 @@
 # rikkaminis-dev-history 按天索引
 
-快速跳转到每日开发日志。共 1436 条记录，58 天。
+快速跳转到每日开发日志。共 1534 条记录，63 天。
 
 ## 2026-08-03（11 条）
 
@@ -3024,7 +3024,7 @@
 - `23:40` **GLOBAL.md 压缩执行完成（09-28，用户授权）**
   - `/var/minis/memory/GLOBAL.md` **29,799 → 24,408 B（−18.1%）**。备份 `shared/retire-au…
 
-## 2026-09-29（6 条）
+## 2026-09-29（15 条）
 
 - `00:00` **09-28 收尾欠账全部清零（23:5x，用户确认）**
   - - `runtime.memoryInjectLines` 已确认生效 = **120**（schema 50..500，前两次确认面板超时未落，第三次已落）→…
@@ -3038,3 +3038,212 @@
   - **新决定性事实**：**`memory_get` 读不到 MEMORY-ROLLUP.md** —— 源码显式排除（`MemoryRepository.kt:…
 - `00:53` **MEMORY-ROLLUP 重建完成（09-29，用户「按你的建议来吧」）**
   - **产物**：`/var/minis/memory/MEMORY-ROLLUP.md` = **8,390 B / 38 条规则 / 59 个 `## Roll…
+- `01:11` **dev-history 档案重建 + 合并（2026-09-29，用户授权「文档低风险，直接合并」）**
+  - **结果**：`docs/dev-history-0929` 分支 = `c921b15f` → `--no-ff` 合并 → **main = `7793f4…
+- `09:26` **技能入口标签修正（09-29，用户报「导入技能→Minis Skills 指向不一致」）**
+  - **问题**：09-23 package rebrand（squash 7b7f12cd）把添加菜单/浏览器标题从 "Minis Skills" 改成 "Rik…
+- `09:27` **合并 fix/skills-entry-label-mismatch → main = b692f2f3（09-29，用户「检查没问题就等 CI 完合并」+「触发完不用等」）**
+  - **改动**：7 locale strings.xml，21 处标签 "RikkaMinis Skills" → "Minis Skills"（`skill_e…
+- `11:30` **合并 refactor/simplify-fgs-notification → main = 0c78f007（09-29，用户「没问题就合并」）**
+  - **分支内容**（2 commits，10 文件 +15/−42）：①`c409e694` FGS 常驻通知删 Stop 按钮 + 展开箭头（删 ACTION_…
+- `11:30` **常驻通知精简 + 通知模块审计（09-29，分支 refactor/simplify-fgs-notification，未合并）**
+  - **停止节点：分支 CI 绿，未合并（合并权在用户）。**
+- `11:53` **FGS 通知展开箭头 = 系统强制，去不掉（09-29 实证，更正上次错误预测）**
+  - **用户报**：常驻通知右侧的向下箭头（圆形 chevron）多余，要求去掉。
+- `13:52` **会话 B 完成：CF Worker 上传客户端（feat/cf-worker-client @ 13f0b146，CI 绿，未合并）**
+  - **基线**：main @ 559594d4（与任务书一致），独立 clone `/var/minis/shared/work/ClashMetaForAndr…
+- `15:55` **fork 构建失败修复：签名 + workflow 权限三连环（09-29 晚，Pre-Release 全绿发 APK）**
+  - - **用户报「构建失败了」→ 三个 fork 存量配置问题（与 merge 的代码无关，全部编译绿）**：①fork 不继承上游 Actions secret…
+- `20:53` **签名：每次安装都要先卸载的根因（09-29 晚，已修，main f6196b8）**
+  - **根因（两处独立证据）**：`build-debug.yaml` 的 `Signing properties` 步骤是三条 workflow 里**唯一被注释…
+
+## 2026-09-30（33 条）
+
+- `06:39` **两个遗留全部处理完（09-30，main = f7053bc）**
+  - **① 合并 PR #1**（`chore/rename-build-workflow` @ 58043a5）：`git merge --no-commit` …
+- `07:09` **CI 三处 annotation 修复（09-30，分支 ci/fix-prerelease-publish @ 9565782，分支 CI 绿未合并）**
+  - **触发**：用户给两张 GitHub Actions annotation 截图（预发布 3 错误 / Build APK 1 警告）说「解决一下」。
+- `07:29` **CI annotation 全清 + 合并 main = 34aca49（09-30，含 tag 步骤线上首跑验证）**
+  - **承接**：上一段修了 tag/缓存/噪音三处（分支 9565782），用户追加「把 ubuntu-latest 迁移 notice 也处理了，处理完就合并」…
+- `11:46` **CF 三套账号密钥核验（09-30）**
+  - - 三套 token 全部有效，且各自与配置的 ACCOUNT_ID 精确匹配（32 hex 逐字符 equal，非猜测）：`CF_API_TOKEN`(尾 0…
+- `12:10` **★ 部署事故：wrangler 覆盖式部署丢掉了 KV 绑定（09-30，自查发现）**
+  - **用户质疑「之前那些不是自动继承下来吗」是对的**。***WORKER*** 三账号原本就是**完整配置好的**（ADMIN 密码、UUID、KV 绑定），我第一轮…
+- `12:31` **ClashPilot（ClashMetaForAndroid fork）全量修改验收（09-30 下午，四源取证）**
+  - **范围**：`559594d`（上游基线）→ main `34aca49`，**65 文件 / +7167 −112**。报告：`/var/minis/sha…
+- `12:31` **★ 沙箱怪癖：shell_execute 输出管道会吞掉「裸 null 行」（09-30 实证）**
+  - **现象**：`printf 'a\nnull\nb\n'` → 输出只有 `a`、`b`；加 `| cat -A` 后正常显示 `null$`。
+- `12:45` **README 两处 P1 漂移已修（09-30，分支 `docs/fix-readme-drift` @ ad209a1，分支 CI 绿，**未合并**）**
+  - **用户拍板**：「修了吧」（承接全量验收报告的两处 P1）。
+- `12:56` **★ 封存完成：ClashPilot（ClashMetaForAndroid fork）开发线收尾（09-30，main = 4cedebe）**
+  - **用户指令链**：「以最高规格检查一遍 → 计划没问题就封存」→ 报告两处 P1 文档漂移 → 「修了吧」→ 「合并」。
+- `13:42` **OpenMinis 上游调研（09-30，用户「看看有什么能抄的」）**
+  - **上游仓库事实**：OpenMinis/OpenMinis = Minis 官方开源镜像（GPL-3.0，Swift+Kotlin 双端，4.8k star）…
+- `13:53` **A 档核查结论（09-30，用户「感觉眼熟，去核查一下」）—— 6 项里 1 剔除 / 1 改判 / 1 降级**
+  - **产物**：`/var/minis/shared/work/openminis-survey-0930/VERIFY-A-TIER.md`（逐项双向源码 + …
+- `13:59` **上游 A 档移植已派发（09-30，3 会话并行）**
+  - **用户拍板**：无障碍已开启（真机复核 `running:true`）；工程量大 → 分派出去。
+- `14:47` **A4「中断尾巴 Case D + 跨 VM 活跃门」完成（09-30，分支 CI 绿，未合并）**
+  - **分支**：`fix/interrupted-tail-case-d` @ **47b55750d09bfe1e0668f066d2ec12cf7ad3bd8…
+- `15:01` **上游 A 档移植·会话 1 完成（分支 CI 绿，未合并）**
+  - **分支** `feat/a11y-restricted-and-recovery` @ `c3467b70cb56080326a3ef0f4969a4366a…
+- `15:37` **会话3 A5 数据库降级保护完成（09-30，分支 feat/db-version-downgrade-guard @ 07726db，CI 绿 #1885，未合并）**
+  - **停止节点到达**：build-apk.yml run #1885，head=07726db14d8ce58563b6f14ff05734802f0bc4e3…
+- `15:47` **上游 A 档移植：三分支合并前核查完成（09-30）**
+  - **报告**：`/var/minis/shared/openminis-port-0930/REPORT-merge-check.md`（三项核查 + 逐条约束…
+- `16:13` **★ 封存完成：上游 A 档移植 4 分支合并 main（09-30，main = 0924445f）**
+  - **用户指令链**：「合并前核查 → 按你的建议来吧，合并 → 触发了就不用等了」。
+- `16:29` **上游 A 档移植三分支合并后审计（09-30 晚）**
+  - - **今天净账**：main 0c78f00 → 0924445f = 27 文件 +2569/−88（3 功能分支 + chore fold 归一 stri…
+- `17:23` **两条审计发现修复完成（09-30，分支 fix/a11y-evergranted-gate-fgs-guidance @ 70a93bc3，CI 绿 #1889 未合并）**
+  - **修复**（3 文件 +437/−12，基线 origin/main 0924445f）：
+- `17:47` **分支合并收口：fix/a11y-evergranted-gate-fgs-guidance → main 26b7ce1（09-30，全套 8 项核查通过）**
+  - **用户指令链**：「检查一下云端上的那个分支，如果没有问题的话，就合并了吧」+「触发了就不用等了」= 核查 + 条件合并授权。
+- `18:00` **真机验证完成（09-30 晚，设备包 1.0.0+1889 = 分支 run #1889 构建，代码==合并树）**
+  - **包来源链（用户问「现在这个包是最新的那个」）**：versionName `1.0.0+1889` ↔ CI run #1889（36694097030，分…
+- `18:04` **应用降级能力定案（09-30，用户问「这个应用能降级吗」）**
+  - **结论：不能。三道门全关（用户记忆正确）**：
+- `19:52` **上游崩溃类修复对比定案（09-30，用户问「上游解决沙箱崩/闪退没有」）**
+  - - **GH#341 闪退**（WebView 渲染进程死亡 → 整 app SIGTRAP abort）：上游 v1.14 用 `ui/webview/Web…
+- `20:37` **Backlog 防御性质占比定案（09-30，用户问「攒着的没修的有多少是防御性质」）**
+  - backlog 全文 1338 行逐条分类：**登记未修缺陷类 42 条，防御性质 14 条（33%）**；非防御 28（清理 8 / 观察 7 / 小 bug…
+- `21:25` **终端性能基准全景（09-30，用户问「你能操作的终端性能怎么样」，代理已关所以网络项缺）**
+  - **环境**：8 核可见（affinity 0-4,6-7，nproc=6）、内核 5.10.236-android12、内存 10.9GB 总/5.4GB 可…
+- `21:53` **syscall 税缓解方案定案（09-30，用户拍板方向：Termux 排除（摩擦力），提升 app 内终端本身）**
+  - **新证据（一手）**：
+- `22:01` **L1 fastio 任务接力准备完成（09-30 深夜，用户将开新会话专门执行）**
+  - **交接件（唯一入口，新会话读完即可开工）**：`/var/minis/shared/handoff-fastio-0930/HANDOFF.md`
+- `22:35` **minis-fastio offload handler 完成（09-30 深夜，分支 feat/minis-fastio-offload @ d2003f75，CI 绿未合并）**
+  - **停止节点**：分支 `feat/minis-fastio-offload`，commit `d2003f75`，CI run **#1891**（id 36…
+- `23:00` **审查对象：云端分支 feat/minis-fastio-offload @ 3e496953（fix 提交：尾随 sym**
+  - **审查对象**：云端分支 `feat/minis-fastio-offload` @ 3e496953（fix 提交：尾随 symlink 不跟随 + 接受 …
+- `23:06` **du 字节口径争议裁决（两会话矛盾，沙箱实测定案）：fastio 开发会话报「handler du 比 busybox**
+  - ** du 字节口径争议裁决（两会话矛盾，沙箱实测定案）**：fastio 开发会话报「handler du 比 busybox du -sb 系统性偏大 di…
+- `23:36` **du 字节口径 P1 修复完成（分支 fix/fastio-du-gnu-byte-parity @ 5397bf51，**
+  - **du 字节口径 P1 修复完成（分支 fix/fastio-du-gnu-byte-parity @ 5397bf51，未合并）**：①walkForSiz…
+- `23:45` **du 字节口径 P1 已合并（main = e47c6560，父 0af354ac + 5397bf51，--no-ff**
+  - **du 字节口径 P1 已合并（main = e47c6560，父 0af354ac + 5397bf51，--no-ff）**：合并前核查三项全过——①分支…
+- `23:59` **fastio 真机测试完成（09-30 深夜，装包=含 fastio 最新版）**
+  - **测试全绿**（沙箱终端 agent 路径，PersistentShell）：
+
+## 2026-10-01（19 条）
+
+- `00:07` **fastio 第二期接力准备完成（09-30 深夜，扩 find/grep/cp/mv）**
+  - **任务书（唯一入口）**：`/var/minis/shared/handoff-fastio-0930/HANDOFF-2.md`
+- `00:52` **fastio 第二期完成（10-01，分支 feat/fastio-primitives-2 @ d74a49c1，CI 绿未合并）**
+  - **停止节点已到**：分支 `feat/fastio-primitives-2`，commits `57693ba6`(主体) + `d74a49c1`(CI …
+- `00:55` **审查 feat/fastio-primitives-2（第二期 find/grep/cp/mv）—— 发现 1 个合并前该修的 P1**
+  - **对象**：云端分支 `feat/fastio-primitives-2` @ `d74a49c1`（相对 main e47c6560，9 文件 +1566/…
+- `01:22` **修复 feat/fastio-primitives-2 的 `mv --force`（commit 98edf12，CI 绿停止节点）**
+  - **改动**（4 文件 +92/−8，同一分支补 commit `d74a49c1` → `98edf12`）：
+- `01:27` **fastio 第二期真机验证完成（10-01 凌晨，装包=第二期最新版）**
+  - **测试结果总表**（handler 内部 elapsed vs 含税基线，全部一手实测）：
+- `01:30` **fastio 第三期打包任务书完成（10-01 凌晨，find 优化 + tar 原语 + 顺路小项）**
+  - **任务书（唯一入口）**：`/var/minis/shared/handoff-fastio-0930/HANDOFF-3.md`
+- `01:34` **fastio 第二期已合并 main（10-01，merge commit 20c0c16b）**
+  - **合并**：`--no-ff`，merge commit `20c0c16b`，父 = `e47c6560`（main）+ `98edf12b`（分支 tip…
+- `01:55` **rikkaminis-dev-methodology 补「分支审查（bug+次生问题）」检查项（10-01，v1.5.0，静态+行为 7/7 绿）**
+  - **用户观察**：他每次都要发「检查一下云端正在跑的那个分支的修改，有没有 Bug/是否引入次生问题」这句话，问技能里有没有覆盖——**没有**，且根因更深：d…
+- `02:45` **fastio 第三期完成（10-01，分支 feat/fastio-primitives-3 @ 4bb8ab42，CI 绿未合并）**
+  - **停止节点已到**：CI run **#1900** Build RikkaMinis Android APK `completed success`，`he…
+- `07:00` **fastio 第三期分支审查完成（10-01，feat/fastio-primitives-3 @ 4bb8ab42，报告 shared/work/review-fastio-p3-1001/REPORT.md）**
+  - **判定**：P0=0；**F1=P1（tar create 成员名用解析后绝对 guest 路径，建议修后再并，用户拍板）**；F2/F4/F8=P2 登记；…
+- `07:51` **fastio 第三期 F1 已修并合并 main（10-01，merge debf06e9，main=debf06e9）**
+  - **用户三连拍板**：核对（「核对一下，没问题就修」）→ 修复 → CI 绿后合并（「跑完之后就合并」「合并触发后就不用等了」）。
+- `07:54` **fastio 第三期真机验证完成（10-01 凌晨，装包=第三期最新版，全绿）**
+  - **结果总表**：
+- `08:31` **第一档确定性批次 tier1-batch-1001（10-01）→ 已交付，停在分支**
+  - **筛选**：从 backlog 1363 行逐条打开源码核实（不是照抄文本），筛出符合「确定性修复池」6 门槛的 6 条 → 用户拍板打包修。报告 `shar…
+- `08:42` **tier1 确定性批次审查 + 双仓合并完成（10-01，RM main=b4592399，CMFA main=d1d56f1）**
+  - **审查（本会话独立复核，非照抄交付单）**：
+- `08:51` **dev-history 三件套更新（10-01，用户「把文档更新一下」）**
+  - - 全流程重建：1492 条（上次 1137）/ 100 条被排除轴过滤 / 脱敏 main 245 + INDEX 30 处，探针双文件 NONE
+- `15:48` **自动压缩「失效」诊断(10-01,用户报长思考模型上压缩失败)**
+  - **根因实锤(真机日志三源)**:压缩摘要单发调用(`generateCompactSummary`,ChatSessionLifecycle.kt:820+)…
+- `16:58` **compact 安静优先修复收尾（10-01，分支 fix/compact-quiet-first-1001 @ 4d1**
+  - # compact 安静优先修复收尾（10-01，分支 fix/compact-quiet-first-1001 @ 4d1c9a25，用户拍板任务结束）
+- `17:11` **核查 fix/compact-quiet-first-1001（10-01，用户「检查一下云端正在跑的分支」+「构建完了」，CI 绿停）**
+  - **对象**：main b4592399 + 2 commits（dd96f04c quiet-first 排序+三道预算；4d1c9a25 只修测试编译——1…
+- `17:12` **合并 fix/compact-quiet-first-1001 → main（10-01，用户放行「没有问题，那就合并吧」，merge 6361b410）**
+  - **合并**：--no-ff merge **6361b410**（父 b4592399 + 4d1c9a25），合并树 vs 分支 tip 0 行差异，git…
+
+## 2026-10-02（14 条）
+
+- `14:51` **自动压缩"双跑/停不掉/杠"诊断（10-02，未动手，待拍板）**
+  - **用户报**：自动压缩失败时上面下面同时在跑、按暂停只停下面的、中间有条杠。
+- `15:24` **停止按钮杀不到压缩 P1 已修（10-02，分支 fix/compact-cancel-on-stop-1002 @ 4bc1352，CI #1908 绿停）**
+  - **改动**（5 文件 +231/−8，停在分支未合并）：①compactAll 的 launch 存 `compactJob`，cancelStream 连带…
+- `15:26` **分支审查 fix/compact-cancel-on-stop-1002（10-02，CI 绿停，未合并）**
+  - **对象**：分支 `fix/compact-cancel-on-stop-1002` @ 4bc13521（main 6361b410 + 1 commit）…
+- `15:30` **合并 fix/compact-cancel-on-stop-1002 → main（10-02，用户放行「该合并的合并」，merge c01acd5）**
+  - **合并前核查**：verify_branch.sh exit 0 全过（首次跑 FAIL=no merge base 是浅克隆 graft 断链，`git f…
+- `15:40` **2026-10-02 15:40:10**
+- `15:55` **2026-10-02 15:55:18**
+- `16:19` **四条判定（10-02 登记项，分支 fix/clearchat-compact-ce-1002 @ cfed933e→e**
+  - **四条判定（10-02 登记项，分支 fix/clearchat-compact-ce-1002 @ cfed933e→ee2b2cea，CI run 369…
+- `16:21` **复核 fix/clearchat-compact-ce-1002 @ ee2b2ce（force-push 后新 tip**
+  - **复核 fix/clearchat-compact-ce-1002 @ ee2b2ce（force-push 后新 tip）**：开发者按前轮建议修了 CI …
+- `16:41` **P2 已修并合入分支 fix/clearchat-compact-ce-1002 @ 90fd2e72（10-02，CI**
+  - **P2 已修并合入分支 fix/clearchat-compact-ce-1002 @ 90fd2e72（10-02，CI 绿停，未合并）**：clearCh…
+- `17:05` **审查（第三轮）fix/clearchat-compact-ce-1002 @ 90fd2e7（CI run 369840**
+  - **审查（第三轮）fix/clearchat-compact-ce-1002 @ 90fd2e7（CI run 36984034118 success @ he…
+- `17:11` **合并 fix/clearchat-compact-ce-1002 → main（10-02，用户放行「没检查出什么问题就**
+  - **合并 fix/clearchat-compact-ce-1002 → main（10-02，用户放行「没检查出什么问题就合并」+「该攒着的攒着」，merge…
+- `20:30` **shared 大清理（10-02，用户放行「就是处理一下吧」，5.1 G → 251 M）：61 个已完成战役目录删除，**
+  - **shared 大清理（10-02，用户放行「就是处理一下吧」，5.1 G → 251 M）**：61 个已完成战役目录删除，81 份最终报告（REPORT/…
+- `22:12` **tall-1997/OpenMinis-Linux（Minis Ultra）第二次调查（10-02）**
+  - # tall-1997/OpenMinis-Linux（Minis Ultra）第二次调查（10-02）
+- `23:55` **LEARN 边种子（方案 A）建成并验证 4/4（10-02，用户拍板「按你说的来」）**
+  - **装置**：`/var/minis/shared/work/learn-edge-seed/`（rules_index.py + index.json 245…
+
+## 2026-10-03（21 条）
+
+- `00:01` **LEARN 边闭环：种子 + 接入 + 回填全部完成（10-02，用户拍板「按你说的推进」）**
+  - **canonical 位置（单一来源，work 目录不留副本）**：`/var/minis/skills/self-improving-agent/scrip…
+- `00:06` **LEARN 边后续（方案 B + 天花板）已登记进 backlog §48 —— 防遗忘的发现链**
+  - **用户明确担心「以后忘了」→ 已把后续工作登记进 canonical 待办册**：`/var/minis/shared/backlog.md` **§48**…
+- `00:07` **GLOBAL.md 新增「待办登记纪律（防遗忘）」第 21 节（10-02，用户拍板「现在就该升级了」）**
+  - **位置**：GLOBAL.md 第 53 行，夹在「修复门纪律」（P 级怎么定，其出口已写 = backlog + 升级触发条件）与「改动阶梯纪律」之间——顺…
+- `00:26` **遗忘层：设计已定稿并登记 §49，结论「停在等数据」（10-02，用户拍板）**
+  - **用户确认**：「现如今最好停在这里，等数据」——即只保留 SENSE 边（`mem-budget`），DECIDE 及以下全部等 §48 方案 B 与容量触…
+- `08:46` **WorkBuddy2API-Android 第一刀：粘性会话 + 排除名单 failover 完成（10-03，CI 绿停未合并）**
+  - **对象**：***OWNER***/WorkBuddy2API-Android 分支 `feat/sticky-session-exclusion-fai…
+- `08:57` **WorkBuddy2API-Android 第二刀：上游池 + 模型名路由完成（10-03，两刀 CI 全绿停，未合并）**
+  - **分支** `feat/sticky-session-exclusion-failover` 现两个 commit：fcee1f8c（第一刀粘性+排除名单）+…
+- `09:04` **WorkBuddy2API-Android：本地证据链补齐（10-03，harness @ d168092，CI 绿停）**
+  - **分支** `feat/sticky-session-exclusion-failover` 三 commit：fcee1f8c（粘性+排除名单）+ b0eb…
+- `09:11` **WorkBuddy2API-Android 合并 main（10-03，用户放行「合并后安装包含所有改动方便验证」，merge 00c89bf）**
+  - **合并**：--no-ff `00c89bf`（父 fdd6d2c + d168092），合并树 vs 分支 tip 树 SHA 逐字符一致（63947386…
+- `09:26` **诊断（10-03，用户报 127.0.0.1:8788 用不了）：8788 = WorkBuddy2API 本地端口（c**
+  - **诊断（10-03，用户报 127.0.0.1:8788 用不了）**：8788 = WorkBuddy2API 本地端口（com.joy4fire.work…
+- `09:34` **WorkBuddy2API「拉不下来模型列表」根因（10-03，cgroup freezer 实锤）：服务/key/模型**
+  - **WorkBuddy2API「拉不下来模型列表」根因（10-03，cgroup freezer 实锤）**：服务/key/模型目录全正常；根因 = Hyper…
+- `10:56` **交接：WorkBuddy2API-Android → Antigravity 原生适配器（10-03 会话末尾，WIP 分支）**
+  - **交接文档（下个会话第一件事读这个）**：`/var/minis/shared/HANDOFF-2026-10-03-wb2api-antigravity.m…
+- `11:59` **方向关闭：WorkBuddy2API Antigravity 原生适配器（10-03，用户拍板放弃）**
+  - **用户原话**：「仔细想了一下，算了，不搞这个了……直接用别人做好的，可能是个更好的选择。」
+- `20:49` **cmfa 分支 fix/cf-optimizer-hardening CI 失败已修（10-03，commit 096a19f，run 19 green）**
+  - **根因链（4 连失败 = 缺本地编译回路的典型症状）**：沙箱无 Android SDK，并行会话（3700b9bf）只能靠 CI 当编译器，4 次 push…
+- `20:54` **cmfa 分支 fix/cf-optimizer-hardening 已合并 main（10-03，merge 91d0**
+  - # cmfa 分支 fix/cf-optimizer-hardening 已合并 main（10-03，merge 91d019f，main=91d019f）
+- `22:24` **agent 执行失误盘点完成（10-03，314 条全量编码）**
+  - # agent 执行失误盘点完成（10-03，314 条全量编码）
+- `22:33` **cmfa 分支 fix/cf-source-concurrency-1003 核查通过（10-03，CI 绿停，未合并）**
+  - # cmfa 分支 fix/cf-source-concurrency-1003 核查通过（10-03，CI 绿停，未合并）
+- `22:36` **gh_sync.sh 四处硬化已落地并实测（10-03，用户拍板「该处理的处理」）**
+  - # gh_sync.sh 四处硬化已落地并实测（10-03，用户拍板「该处理的处理」）
+- `22:37` **cmfa 分支 fix/cf-source-concurrency-1003 已合并 main（10-03，merge**
+  - # cmfa 分支 fix/cf-source-concurrency-1003 已合并 main（10-03，merge 8864c79，main=8864c…
+- `22:45` **PRoot 本地 git 传输食谱（10-03 三轮对照探针实测定案）**
+  - # PRoot 本地 git 传输食谱（10-03 三轮对照探针实测定案）
+- `22:52` **沙箱缺陷注册表落地（10-03，用户拍板「按你建议的来」）**
+  - # 沙箱缺陷注册表落地（10-03，用户拍板「按你建议的来」）
+- `23:55` **「散落资产 → 下沉到代码层」盘点（10-03，用户问：有哪些散落在脚本/记忆中的可以下沉到 app 自带代码）**
+  - # 「散落资产 → 下沉到代码层」盘点（10-03，用户问：有哪些散落在脚本/记忆中的可以下沉到 app 自带代码）
+
+## 2026-10-04（2 条）
+
+- `22:48` **压缩体系 vs《Compaction Cliff》对比分析完成（10-04，用户帖论文求对比改进）**
+  - **对象**：用户发来一篇"2026 下半年智能体记忆/压缩研究"文章（arxiv 2608.22752 + Mem0 blog 等），要求对比 RikkaMi…
+- `23:48` **定时任务 L0 施工完成（feat/scheduled-tasks-l0-1004，CI 绿，待真机清单）**
+  - 续接中断会话（HANDOFF-2026-10-04）完成简报 B 全部施工，交付报告 `shared/work/rk-sched-1004/DELIVERY-R…
