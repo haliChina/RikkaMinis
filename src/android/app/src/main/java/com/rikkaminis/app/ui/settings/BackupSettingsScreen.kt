@@ -49,6 +49,7 @@ import com.rikkaminis.app.MinisApp
 import com.rikkaminis.app.R
 import com.rikkaminis.app.ui.components.sanitizeSingleLineInput
 import com.rikkaminis.app.backup.ConfigBackup
+import com.rikkaminis.app.scheduled.ScheduledTasksStore
 import com.rikkaminis.app.backup.WebDavBackupItem
 import com.rikkaminis.app.backup.WebDavClient
 import com.rikkaminis.app.backup.WebDavConfig
@@ -274,6 +275,7 @@ fun BackupSettingsScreen(
                         chatWindowDays = chatWindowDays,
                         artifactRoots = artifactRoots,
                         webDavConfig = webDavConfig,
+                        scheduledTasks = ScheduledTasksStore.exportDocument(context),
                         writer = w,
                     )
                 }
@@ -300,6 +302,9 @@ fun BackupSettingsScreen(
                         chatRepo = chatRepository,
                         artifactRoots = artifactRoots,
                         onWebDavConfig = applyWebDavConfig,
+                        onScheduledTasks = { doc ->
+                            ScheduledTasksStore.importDocument(context, doc)
+                        },
                     )
                 }
                 withContext(Dispatchers.Main) {
@@ -367,6 +372,7 @@ fun BackupSettingsScreen(
                                 chatWindowDays = chatWindowDays,
                                 artifactRoots = artifactRoots,
                                 webDavConfig = webDavConfig,
+                                scheduledTasks = ScheduledTasksStore.exportDocument(context),
                                 writer = w,
                             )
                         }
@@ -769,6 +775,7 @@ fun BackupSettingsScreen(
                                             chatWindowDays = chatWindowDays,
                                             artifactRoots = artifactRoots,
                                             webDavConfig = webDavConfig,
+                                            scheduledTasks = ScheduledTasksStore.exportDocument(context),
                                             writer = w,
                                         )
                                     }

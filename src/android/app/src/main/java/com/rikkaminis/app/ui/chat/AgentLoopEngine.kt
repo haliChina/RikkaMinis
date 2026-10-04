@@ -12,6 +12,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import com.rikkaminis.app.agent.runtime.AgentExecutionBudget
+import com.rikkaminis.app.agent.runtime.AgentRunBudgetCeilings
 import com.rikkaminis.app.agent.runtime.AgentRunEvent
 import com.rikkaminis.app.agent.runtime.AgentRunPhase
 import com.rikkaminis.app.agent.runtime.AgentRunState
@@ -251,17 +252,30 @@ internal class AgentLoopEngine(
         // 会让剩余量记账失去基准）。未 prime 的 JVM 测试路径回落到与 T7_*_DEFAULT
         // 相同的默认值，行为不变。
         val runtimeLimits = com.rikkaminis.app.data.AgentRuntimeLimitsPrefs
+        // [feat/scheduled-tasks-l0] A scheduled run registers a per-session
+        // ceiling (AgentRunBudgetCeilings) right before dispatching. The run's
+        // budget is the STRICTER of the user's runtime limits and that ceiling
+        // (min semantics, guardrail §5.1). deadline fields hold absolute
+        // monotonic instants, so the ceiling's wall-clock duration converts as
+        // now + min(user deadline, ceiling deadline) — brief B3 conversion.
+        // Token enforcement note: the engine never calls consumeEstimatedTokens
+        // today, so maxEstimatedTokens is snapshot-only either way; it is still
+        // carried here so the cap becomes active the moment enforcement lands.
+        val ceiling = AgentRunBudgetCeilings.lookup(host.activeSessionId)
+        val userDeadlineMs = runtimeLimits.runDeadlineMinutes() * 60L * 1000L
         val observeBudget = AgentExecutionBudget(
             startedAtMonotonicMs = SystemClock.elapsedRealtime(),
             deadlineMonotonicMs = SystemClock.elapsedRealtime() +
-                runtimeLimits.runDeadlineMinutes() * 60L * 1000L,
-            maxTurns = runtimeLimits.maxTurns(),
+                (if (ceiling != null) minOf(userDeadlineMs, ceiling.deadlineMs) else userDeadlineMs),
+            maxTurns = runtimeLimits.maxTurns().let { user ->
+                if (ceiling != null) minOf(user, ceiling.maxTurns) else user
+            },
             maxProviderAttempts = runtimeLimits.maxProviderAttempts(),
             maxToolCalls = runtimeLimits.maxToolCalls(),
             maxShellCommands = runtimeLimits.maxShellCommands(),
             maxCompactionCalls = runtimeLimits.maxCompactionCalls(),
             maxConcurrentTools = runtimeLimits.maxConcurrentTools(),
-            maxEstimatedTokens = null, // token 计数不稳定，观察期不强制
+            maxEstimatedTokens = ceiling?.maxEstimatedTokens, // token 计数不稳定，观察期不强制
             monotonicClock = { SystemClock.elapsedRealtime() },
         )
         traceObserver.activeRunBudget = observeBudget

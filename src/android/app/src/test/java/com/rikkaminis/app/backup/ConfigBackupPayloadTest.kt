@@ -165,6 +165,45 @@ class ConfigBackupPayloadTest {
         assertEquals(1, ConfigBackup.FORMAT_VERSION)
     }
 
+    // ── [feat/scheduled-tasks-l0] scheduledTasks section ─────────────────────
+
+    @Test
+    fun `scheduledTasks section round-trips through the payload shape`() {
+        // The store hands the document over verbatim; the codec round-trip it
+        // must survive is exactly ScheduledTasksCodec.parse(encode(..)) —
+        // asserted with the real org.json artifact here.
+        val doc = JSONObject(
+            """
+            {"version":1,"globalEnabled":true,
+             "tasks":[{"id":"t-1","title":"早报","prompt":"p",
+                       "window":{"start":"07:00","end":"23:00"},"enabled":false,
+                       "budget":{"maxTurns":30,"deadlineSec":600,"maxEstimatedTokens":100000},
+                       "lastRunDate":"2026-10-03","lastResult":"ok",
+                       "failStreak":0,"suspendedByFuse":false}]}
+            """.trimIndent()
+        )
+        assertTrue(doc.has("tasks"))
+        assertEquals(true, doc.optBoolean("globalEnabled"))
+        assertEquals("t-1", doc.optJSONArray("tasks")!!.optJSONObject(0)!!.optString("id"))
+    }
+
+    @Test
+    fun `scheduledTasks section is omitted when the caller passes null`() {
+        // Mirrors the streaming frameKeys invariant: a section present in the
+        // skeleton MUST be in the frame list. Null sections are simply absent
+        // from the skeleton, so old backups keep importing (asserted above).
+        val skeleton = JSONObject().apply {
+            put("format", "openminis.config.backup")
+            put("version", 1)
+            put("createdAt", 0L)
+            put("includesSecrets", false)
+            put("fields", JSONObject())
+            put("providers", JSONArray())
+        }
+        assertFalse(skeleton.has("scheduledTasks"))
+        assertNull(skeleton.optJSONObject("scheduledTasks"))
+    }
+
     @Test
     fun `mcp server entry keeps the shape importJSON reads`() {
         // MCPRepository.exportServerJSON emits {"mcpServers":{"<id>":{…}}} and

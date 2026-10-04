@@ -1599,4 +1599,42 @@
     <string name="newer_db_body">현재 설치된 RikkaMinis는 이 데이터를 만든 버전보다 오래되어 데이터베이스를 안전하게 열 수 없습니다.\n\n삭제된 것은 아무것도 없습니다 — 대화 내용은 이 기기에 그대로 남아 있습니다. 더 새로운 버전의 RikkaMinis를 다시 설치하면 모든 데이터가 돌아옵니다.</string>
     <string name="newer_db_versions">이 버전은 데이터 형식 %1$d을 지원합니다</string>
     <string name="newer_db_exit">닫기</string>
+
+    <!-- [feat/scheduled-tasks-l0] Scheduled tasks (Settings > Agent Runtime). -->
+    <string name="scheduled_tasks_entry">예약 작업</string>
+    <string name="scheduled_tasks_entry_subtitle">하루 창 내에서 앱을 처음 열 때 작업 실행</string>
+    <string name="scheduled_tasks_title">예약 작업</string>
+    <string name="scheduled_new_task">새 작업</string>
+    <string name="scheduled_default_task_title">제목 없는 작업</string>
+    <string name="scheduled_global_footer">마스터 스위치가 꺼져 있으면 예약 확인도 [scheduled-run] 로그도 발생하지 않습니다.</string>
+    <string name="scheduled_global_switch">예약 작업 사용</string>
+    <string name="scheduled_global_switch_subtitle">마스터 스위치. 새 작업은 기본적으로 꺼져 있습니다</string>
+    <string name="scheduled_list_header">작업 목록</string>
+    <string name="scheduled_list_footer">작업은 매일 창 내 처음 포그라운드 전환 시 실행됩니다. 하루 최대 1회, 동시에 1개만.</string>
+    <string name="scheduled_empty_hint">아직 예약 작업이 없습니다. 위의 새 작업에서 만들어 보세요(예: 매일 아침 요약). 작업은 기본적으로 꺼져 있습니다.</string>
+    <string name="scheduled_resume">재개</string>
+    <string name="scheduled_state_suspended">연속 %1$d회 실패 — 일시 중지</string>
+    <string name="scheduled_state_ok">마지막 성공(%1$s)</string>
+    <string name="scheduled_state_failed">마지막 실패(%1$s)</string>
+    <string name="scheduled_state_never_ran">아직 실행 안 함</string>
+    <string name="scheduled_new_title">예약 작업 만들기</string>
+    <string name="scheduled_edit_title">예약 작업 편집</string>
+    <string name="scheduled_section_identity">작업 내용</string>
+    <string name="scheduled_identity_footer">작업은 새로운 독립 세션에서 실행되며 현재 채팅에 영향을 주지 않습니다.</string>
+    <string name="scheduled_field_title">제목(선택)</string>
+    <string name="scheduled_field_prompt">작업 프롬프트</string>
+    <string name="scheduled_prompt_placeholder">예: GitHub 알림을 모아 요약하기</string>
+    <string name="scheduled_section_window">일일 창</string>
+    <string name="scheduled_window_footer">24시간제 HH:MM, 시작이 종료보다 앞서야 합니다. 창 내 첫 확인 시 하루 1회 실행됩니다.</string>
+    <string name="scheduled_field_window_start">시작</string>
+    <string name="scheduled_field_window_end">종료</string>
+    <string name="scheduled_section_budget">예산</string>
+    <string name="scheduled_budget_footer">한도(턴 수, 경과 초, 예상 토큰) 중 하나에 도달하면 실행이 종료됩니다.</string>
+    <string name="scheduled_field_max_turns">최대 턴 수</string>
+    <string name="scheduled_field_deadline">시간 한도(초)</string>
+    <string name="scheduled_field_max_tokens">예상 토큰 한도</string>
+    <string name="scheduled_delete_title">예약 작업을 삭제할까요?</string>
+    <string name="scheduled_delete_body">“%1$s” 작업이 영구 삭제됩니다.</string>
+    <string name="scheduled_fuse_notification_title">예약 작업 일시 중지됨</string>
+    <string name="scheduled_fuse_notification_body">“%1$s” 작업이 연속 %2$d회 실패하여 중지되었습니다. 설정에서 재개할 수 있습니다.</string>
 </resources>

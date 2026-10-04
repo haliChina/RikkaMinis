@@ -1600,4 +1600,42 @@
     <string name="newer_db_body">Diese Version von RikkaMinis ist älter als der Build, der deine Daten erstellt hat, und kann die Datenbank nicht sicher öffnen.\n\nEs wurde nichts gelöscht — deine Unterhaltungen sind auf diesem Gerät vollständig erhalten. Installiere die neuere Version von RikkaMinis, und alles ist wieder da.</string>
     <string name="newer_db_versions">Diese Version unterstützt Datenformat %1$d</string>
     <string name="newer_db_exit">Schließen</string>
+
+    <!-- [feat/scheduled-tasks-l0] Scheduled tasks (Settings > Agent Runtime). -->
+    <string name="scheduled_tasks_entry">Geplante Aufgaben</string>
+    <string name="scheduled_tasks_entry_subtitle">Führt Aufgaben beim ersten App-Start im Tagesfenster aus</string>
+    <string name="scheduled_tasks_title">Geplante Aufgaben</string>
+    <string name="scheduled_new_task">Neue Aufgabe</string>
+    <string name="scheduled_default_task_title">Unbenannte Aufgabe</string>
+    <string name="scheduled_global_footer">Bei ausgeschaltetem Hauptschalter finden keine geplanten Prüfungen und keine [scheduled-run]-Protokolle statt.</string>
+    <string name="scheduled_global_switch">Geplante Aufgaben aktivieren</string>
+    <string name="scheduled_global_switch_subtitle">Hauptschalter; neue Aufgaben starten deaktiviert</string>
+    <string name="scheduled_list_header">Aufgaben</string>
+    <string name="scheduled_list_footer">Aufgaben laufen beim ersten Vordergrund-Wechsel im Tagesfenster; höchstens einmal pro Tag und nur eine gleichzeitig.</string>
+    <string name="scheduled_empty_hint">Noch keine geplanten Aufgaben. Tippe oben auf Neue Aufgabe – zum Beispiel eine tägliche Morgen-Zusammenfassung. Aufgaben starten deaktiviert.</string>
+    <string name="scheduled_resume">Fortsetzen</string>
+    <string name="scheduled_state_suspended">%1$d Fehlversuche in Folge – pausiert</string>
+    <string name="scheduled_state_ok">Zuletzt erfolgreich (%1$s)</string>
+    <string name="scheduled_state_failed">Zuletzt fehlgeschlagen (%1$s)</string>
+    <string name="scheduled_state_never_ran">Noch nicht gelaufen</string>
+    <string name="scheduled_new_title">Neue geplante Aufgabe</string>
+    <string name="scheduled_edit_title">Geplante Aufgabe bearbeiten</string>
+    <string name="scheduled_section_identity">Aufgabe</string>
+    <string name="scheduled_identity_footer">Die Aufgabe läuft in einer eigenen, neu erstellten Sitzung und berührt den aktuellen Chat nicht.</string>
+    <string name="scheduled_field_title">Titel (optional)</string>
+    <string name="scheduled_field_prompt">Aufgaben-Prompt</string>
+    <string name="scheduled_prompt_placeholder">z. B. Meine GitHub-Benachrichtigungen zusammenfassen</string>
+    <string name="scheduled_section_window">Tagesfenster</string>
+    <string name="scheduled_window_footer">24-Stunden-Format HH:MM, Beginn vor Ende. Die Aufgabe läuft bei der ersten Prüfung im Fenster, einmal pro Tag.</string>
+    <string name="scheduled_field_window_start">Beginn</string>
+    <string name="scheduled_field_window_end">Ende</string>
+    <string name="scheduled_section_budget">Budget</string>
+    <string name="scheduled_budget_footer">Der Lauf stoppt, sobald ein Limit erreicht ist: Runden, Sekunden oder geschätzte Tokens.</string>
+    <string name="scheduled_field_max_turns">Max. Runden</string>
+    <string name="scheduled_field_deadline">Zeitlimit (Sekunden)</string>
+    <string name="scheduled_field_max_tokens">Geschätztes Token-Limit</string>
+    <string name="scheduled_delete_title">Geplante Aufgabe löschen?</string>
+    <string name="scheduled_delete_body">„%1$s“ wird endgültig gelöscht.</string>
+    <string name="scheduled_fuse_notification_title">Geplante Aufgabe pausiert</string>
+    <string name="scheduled_fuse_notification_body">„%1$s“ ist %2$d-mal hintereinander fehlgeschlagen und wurde deaktiviert. In den Einstellungen fortsetzbar.</string>
 </resources>

@@ -154,6 +154,11 @@ object Routes {
     const val ENV_VARS = "env_vars"
     /** [feat/runtime-limits-panel] Runtime Limits page (agent runtime knobs). */
     const val RUNTIME_LIMITS = "runtime_limits"
+    /** [feat/scheduled-tasks-l0] Scheduled tasks list + editor. */
+    const val SCHEDULED_TASKS = "scheduled_tasks"
+    const val SCHEDULED_TASK_EDIT = "scheduled_task_edit/{taskId}"
+    fun scheduledTaskEdit(taskId: String?) =
+        if (taskId == null) "scheduled_task_edit/-" else "scheduled_task_edit/$taskId"
     /** [feat/chat-tuning-panel] Chat Tuning page (reading / scrolling / composer knobs). */
     const val CHAT_TUNING = "chat_tuning"
     const val SKILLS = "skills"
@@ -656,6 +661,7 @@ fun AppNavigation(
                 onRootfsClick = { navController.safeNavigate(Routes.STORAGE) },
                 onEnvVarsClick = { navController.safeNavigate(Routes.ENV_VARS) },
                 onRuntimeLimitsClick = { navController.safeNavigate(Routes.RUNTIME_LIMITS) },
+                onScheduledTasksClick = { navController.safeNavigate(Routes.SCHEDULED_TASKS) },
                 onSkillsClick = { navController.safeNavigate(Routes.SKILLS) },
                 onMemoryClick = { navController.safeNavigate(Routes.MEMORY) },
                 onMcpClick = { navController.safeNavigate(Routes.MCP) },
@@ -1086,6 +1092,31 @@ fun AppNavigation(
         composable(Routes.RUNTIME_LIMITS) {
             com.rikkaminis.app.ui.settings.RuntimeLimitsScreen(
                 onBack = { navController.safePopBackStack() },
+            )
+        }
+        // [feat/scheduled-tasks-l0] Scheduled tasks list (top-level sub-page,
+        // no back arrow) and its editor (explicit Cancel/Save + destructive
+        // delete confirm). "-" is the new-task sentinel for the wildcard id.
+        composable(Routes.SCHEDULED_TASKS) {
+            com.rikkaminis.app.ui.settings.ScheduledTasksScreen(
+                onEditTask = { id ->
+                    navController.safeNavigate(Routes.scheduledTaskEdit(id))
+                },
+                onNewTask = {
+                    navController.safeNavigate(Routes.scheduledTaskEdit(null))
+                },
+            )
+        }
+        composable(
+            route = Routes.SCHEDULED_TASK_EDIT,
+            arguments = listOf(
+                navArgument("taskId") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId")
+            com.rikkaminis.app.ui.settings.ScheduledTaskEditScreen(
+                taskId = taskId?.takeIf { it != "-" },
+                onDone = { navController.safePopBackStack() },
             )
         }
         composable(Routes.CHAT_TUNING) {

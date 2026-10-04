@@ -1600,4 +1600,42 @@
     <string name="newer_db_body">目前安裝的 RikkaMinis 比建立這些資料的版本舊，無法安全開啟資料庫。\n\n沒有任何內容被刪除——你的對話仍完整保存在這台裝置上。重新安裝較新的 RikkaMinis 版本，資料就會回來。</string>
     <string name="newer_db_versions">此版本支援資料格式 %1$d</string>
     <string name="newer_db_exit">關閉</string>
+
+    <!-- [feat/scheduled-tasks-l0] Scheduled tasks (Settings > Agent Runtime). -->
+    <string name="scheduled_tasks_entry">排程任務</string>
+    <string name="scheduled_tasks_entry_subtitle">於每日時間窗內首次開啟 app 時執行任務</string>
+    <string name="scheduled_tasks_title">排程任務</string>
+    <string name="scheduled_new_task">新增任務</string>
+    <string name="scheduled_default_task_title">未命名任務</string>
+    <string name="scheduled_global_footer">總開關關閉時，不進行任何排程檢查，也不會產生 [scheduled-run] 日誌。</string>
+    <string name="scheduled_global_switch">啟用排程任務</string>
+    <string name="scheduled_global_switch_subtitle">總開關；新增任務預設為關閉</string>
+    <string name="scheduled_list_header">任務清單</string>
+    <string name="scheduled_list_footer">任務於每日時間窗內首次切換至前景時執行；每天至多一次，同一時間僅執行一項。</string>
+    <string name="scheduled_empty_hint">尚無排程任務。點「新增任務」建立一項——例如每天早上產生摘要。任務預設為關閉，建立後需手動開啟。</string>
+    <string name="scheduled_resume">恢復</string>
+    <string name="scheduled_state_suspended">連續失敗 %1$d 次，已暫停</string>
+    <string name="scheduled_state_ok">上次執行成功（%1$s）</string>
+    <string name="scheduled_state_failed">上次失敗（%1$s）</string>
+    <string name="scheduled_state_never_ran">尚未執行</string>
+    <string name="scheduled_new_title">新增排程任務</string>
+    <string name="scheduled_edit_title">編輯排程任務</string>
+    <string name="scheduled_section_identity">任務內容</string>
+    <string name="scheduled_identity_footer">任務於新建的獨立會話中執行，不影響目前聊天。</string>
+    <string name="scheduled_field_title">標題（選填）</string>
+    <string name="scheduled_field_prompt">任務提示詞</string>
+    <string name="scheduled_prompt_placeholder">例如：彙整我的 GitHub 通知並產生摘要</string>
+    <string name="scheduled_section_window">每日時間窗</string>
+    <string name="scheduled_window_footer">24 小時制 HH:MM，開始需早於結束。任務僅於時間窗內的首次檢查時執行，每天至多一次。</string>
+    <string name="scheduled_field_window_start">開始</string>
+    <string name="scheduled_field_window_end">結束</string>
+    <string name="scheduled_section_budget">預算</string>
+    <string name="scheduled_budget_footer">超出任一上限（回合數、時長（秒）或預估 token）時執行會被終止。</string>
+    <string name="scheduled_field_max_turns">最大回合數</string>
+    <string name="scheduled_field_deadline">時長上限（秒）</string>
+    <string name="scheduled_field_max_tokens">預估 token 上限</string>
+    <string name="scheduled_delete_title">刪除排程任務？</string>
+    <string name="scheduled_delete_body">「%1$s」將被永久刪除。</string>
+    <string name="scheduled_fuse_notification_title">排程任務已暫停</string>
+    <string name="scheduled_fuse_notification_body">「%1$s」連續失敗 %2$d 次，已自動停用。可於設定中恢復。</string>
 </resources>
