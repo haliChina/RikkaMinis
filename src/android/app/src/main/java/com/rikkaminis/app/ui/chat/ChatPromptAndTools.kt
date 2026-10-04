@@ -22,6 +22,7 @@ import com.rikkaminis.app.tools.FileEditTool
 import com.rikkaminis.app.tools.FileReadTool
 import com.rikkaminis.app.tools.FileWriteTool
 import com.rikkaminis.app.tools.ReadImageTool
+import com.rikkaminis.app.tools.SandboxDefectRegistry
 import com.rikkaminis.app.tools.SubagentSkill
 import com.rikkaminis.app.tools.ToolExecutionResult
 import com.rikkaminis.app.tools.UnknownToolMessage
@@ -365,9 +366,35 @@ internal suspend fun ChatViewModel.executeTool(
         }
         // Deliberately swallowed: a logging failure must never break the
         // tool-result path back to the model.
+
+        // [defect-registry-recall] One deliberate exception to the
+        // side-channel rule above: when the failure output matches a known
+        // sandbox defect, the registry's recovery path is appended to the
+        // result the model sees. Motivation (2026-10-03): a defect recorded
+        // in memory still burned 3 probe rounds — the hint must arrive at
+        // the moment of failure, not one file-read away. No registry file /
+        // no match → the result flows unchanged.
+        val defectHint = defectRegistryHintFor(result.output)
+        if (defectHint != null) return result.copy(output = result.output + defectHint)
     }
     return result
 }
+
+/**
+ * [defect-registry-recall] Read the user-maintained sandbox defect registry
+ * (`<filesDir>/minis-global/shared/sandbox-limits.md`, the host side of
+ * `/var/minis/shared/sandbox-limits.md`) and return a hint suffix when
+ * [failureOutput] matches a known defect's raw error text; null when there
+ * is no registry file, no match, or any read/parse failure. Best-effort by
+ * design — a registry problem must never break the tool-result path (same
+ * discipline as the ToolFailureHook call above).
+ */
+private fun ChatViewModel.defectRegistryHintFor(failureOutput: String): String? =
+    runCatching {
+        val registry = java.io.File(context.filesDir, "minis-global/shared/sandbox-limits.md")
+        if (!registry.isFile) null
+        else SandboxDefectRegistry.hintSuffix(failureOutput, registry.readText())
+    }.getOrNull()
 
 /**
  * [T7-subagent] Execute [SubagentSkill.NAME] — spawn an independent
