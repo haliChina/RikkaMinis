@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Tune
@@ -69,6 +70,8 @@ fun SettingsScreen(
     onEnvVarsClick: () -> Unit = {},
     // [feat/runtime-limits-panel] entry into the Runtime Limits page.
     onRuntimeLimitsClick: () -> Unit = {},
+    // [feat/scheduled-tasks-l0] entry into the Scheduled Tasks page.
+    onScheduledTasksClick: () -> Unit = {},
     onSkillsClick: () -> Unit = {},
     onMemoryClick: () -> Unit = {},
     // [T-mcp-integration-android] MCP Integrations page, listed directly below
@@ -234,6 +237,17 @@ fun SettingsScreen(
                     title = stringResource(R.string.runtime_limits_entry),
                     subtitle = stringResource(R.string.runtime_limits_entry_subtitle),
                     onClick = onRuntimeLimitsClick,
+                    showDivider = true,
+                )
+                // [feat/scheduled-tasks-l0] Scheduled tasks list — Settings
+                // → Agent Runtime. Disabled by factory default (§5.4): the
+                // page itself carries the master switch.
+                SettingsItem(
+                    icon = Icons.Outlined.Schedule,
+                    iconColor = Color(0xFF30B0C7),
+                    title = stringResource(R.string.scheduled_tasks_entry),
+                    subtitle = stringResource(R.string.scheduled_tasks_entry_subtitle),
+                    onClick = onScheduledTasksClick,
                     showDivider = false,
                 )
             }

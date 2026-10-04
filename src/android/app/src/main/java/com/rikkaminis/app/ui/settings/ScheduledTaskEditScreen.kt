@@ -1,0 +1,262 @@
+package com.rikkaminis.app.ui.settings
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.rikkaminis.app.R
+import com.rikkaminis.app.scheduled.ScheduledTask
+import com.rikkaminis.app.scheduled.ScheduledTaskPolicy
+import com.rikkaminis.app.scheduled.ScheduledTasksCodec
+import com.rikkaminis.app.scheduled.ScheduledTasksStore
+import com.rikkaminis.app.ui.components.MinisButton
+import com.rikkaminis.app.ui.components.RowLabel
+import com.rikkaminis.app.ui.components.SectionTextField
+import kotlinx.coroutines.launch
+
+/**
+ * [feat/scheduled-tasks-l0] Create/edit one scheduled task (brief §4).
+ *
+ * Editing screens keep explicit Cancel/Save (AddCustomModelScreen pattern):
+ * `onBack` is suppressed on the scaffold and a Cancel text action sits in the
+ * navigation slot; Save validates the window (strict HH:MM, start < end) via
+ * [ScheduledTaskPolicy.parseWindowMinuteOfDay] and refuses blank prompts.
+ *
+ * Deleting an existing task is destructive → AlertDialog confirm
+ * (BackupSettingsScreen pattern), never a bare swipe.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScheduledTaskEditScreen(
+    taskId: String?,
+    onDone: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val isNew = taskId == null
+
+    var title by remember { mutableStateOf("") }
+    var prompt by remember { mutableStateOf("") }
+    var windowStart by remember { mutableStateOf("07:00") }
+    var windowEnd by remember { mutableStateOf("23:00") }
+    var maxTurns by remember { mutableStateOf(ScheduledTask.DEFAULT_MAX_TURNS.toString()) }
+    var deadlineSec by remember { mutableStateOf(ScheduledTask.DEFAULT_DEADLINE_SEC.toString()) }
+    var maxEstimatedTokens by remember { mutableStateOf(ScheduledTask.DEFAULT_MAX_TOKENS.toString()) }
+    // Run-state fields (lastRunDate / lastResult / failStreak / enabled /
+    // suspendedByFuse) are preserved on edit: an edit must never re-arm the
+    // same-day gate or silently clear a tripped fuse (resume stays manual).
+    var original by remember { mutableStateOf<ScheduledTask?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (!isNew) {
+        LaunchedEffect(taskId) {
+            val file = ScheduledTasksStore.load(context)
+            file.tasks.firstOrNull { it.id == taskId }?.let { t ->
+                title = t.title
+                prompt = t.prompt
+                windowStart = t.windowStart
+                windowEnd = t.windowEnd
+                maxTurns = t.maxTurns.toString()
+                deadlineSec = t.deadlineSec.toString()
+                maxEstimatedTokens = t.maxEstimatedTokens.toString()
+                original = t
+            }
+        }
+    }
+
+    // Strict HH:MM both halves, start < end (half-open windows, no midnight
+    // spanning in L0 — policy rejects start >= end with INVALID_WINDOW).
+    val startOk = ScheduledTaskPolicy.parseWindowMinuteOfDay(windowStart) != null
+    val endOk = ScheduledTaskPolicy.parseWindowMinuteOfDay(windowEnd) != null
+    val windowOk = startOk && endOk &&
+        ScheduledTaskPolicy.parseWindowMinuteOfDay(windowStart)!! <
+        ScheduledTaskPolicy.parseWindowMinuteOfDay(windowEnd)!!
+    val turnsValue = maxTurns.toIntOrNull()
+    val deadlineValue = deadlineSec.toIntOrNull()
+    val tokensValue = maxEstimatedTokens.toLongOrNull()
+    val turnsOk = turnsValue != null && turnsValue > 0
+    val deadlineOk = deadlineValue != null && deadlineValue > 0
+    val tokensOk = tokensValue != null && tokensValue > 0
+    val canSave = prompt.isNotBlank() && windowOk && turnsOk && deadlineOk && tokensOk
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.scheduled_delete_title)) },
+            text = { Text(stringResource(R.string.scheduled_delete_body, title.ifBlank { stringResource(R.string.scheduled_default_task_title) })) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    scope.launch {
+                        ScheduledTasksStore.deleteTask(context, taskId ?: return@launch)
+                        onDone()
+                    }
+                }) { Text(stringResource(R.string.common_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
+    SettingsScaffold(
+        title = stringResource(
+            if (isNew) R.string.scheduled_new_title else R.string.scheduled_edit_title,
+        ),
+        onBack = null, // edit screen: explicit Cancel/Save pair instead (§#11)
+        navigation = {
+            MinisTextButton(onClick = onDone) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        },
+    ) {
+        SettingsSection(
+            header = stringResource(R.string.scheduled_section_identity),
+            footer = stringResource(R.string.scheduled_identity_footer),
+        ) {
+            SettingsCardBlock {
+                RowLabel(text = stringResource(R.string.scheduled_field_title))
+                SectionTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    singleLine = true,
+                )
+                Spacer(Modifier.height(12.dp))
+                RowLabel(text = stringResource(R.string.scheduled_field_prompt))
+                SectionTextField(
+                    value = prompt,
+                    onValueChange = { prompt = it },
+                    placeholder = stringResource(R.string.scheduled_prompt_placeholder),
+                    singleLine = false,
+                    isError = prompt.isBlank(),
+                )
+            }
+        }
+
+        SettingsSection(
+            header = stringResource(R.string.scheduled_section_window),
+            footer = stringResource(R.string.scheduled_window_footer),
+        ) {
+            SettingsCardBlock {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        RowLabel(text = stringResource(R.string.scheduled_field_window_start))
+                        SectionTextField(
+                            value = windowStart,
+                            onValueChange = { windowStart = it },
+                            isError = !startOk,
+                            singleLine = true,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        RowLabel(text = stringResource(R.string.scheduled_field_window_end))
+                        SectionTextField(
+                            value = windowEnd,
+                            onValueChange = { windowEnd = it },
+                            isError = !endOk,
+                            singleLine = true,
+                        )
+                    }
+                }
+            }
+        }
+
+        SettingsSection(
+            header = stringResource(R.string.scheduled_section_budget),
+            footer = stringResource(R.string.scheduled_budget_footer),
+        ) {
+            SettingsCardBlock {
+                RowLabel(text = stringResource(R.string.scheduled_field_max_turns))
+                SectionTextField(
+                    value = maxTurns,
+                    onValueChange = { maxTurns = it.filter(Char::isDigit) },
+                    isError = !turnsOk,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                Spacer(Modifier.height(12.dp))
+                RowLabel(text = stringResource(R.string.scheduled_field_deadline))
+                SectionTextField(
+                    value = deadlineSec,
+                    onValueChange = { deadlineSec = it.filter(Char::isDigit) },
+                    isError = !deadlineOk,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                Spacer(Modifier.height(12.dp))
+                RowLabel(text = stringResource(R.string.scheduled_field_max_tokens))
+                SectionTextField(
+                    value = maxEstimatedTokens,
+                    onValueChange = { maxEstimatedTokens = it.filter(Char::isDigit) },
+                    isError = !tokensOk,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+        MinisButton(
+            onClick = {
+                val prior = original
+                val effectiveId = taskId ?: ScheduledTasksCodec.newTaskId()
+                scope.launch {
+                    ScheduledTasksStore.upsertTask(
+                        context,
+                        ScheduledTask(
+                            id = effectiveId,
+                            title = title.trim(),
+                            prompt = prompt.trim(),
+                            windowStart = windowStart.trim(),
+                            windowEnd = windowEnd.trim(),
+                            // §5.4: brand-new tasks enter OFF. Editing keeps the
+                            // task's current enabled state (the row switch is
+                            // the explicit control for that).
+                            enabled = prior?.enabled ?: false,
+                            maxTurns = turnsValue ?: ScheduledTask.DEFAULT_MAX_TURNS,
+                            deadlineSec = deadlineValue ?: ScheduledTask.DEFAULT_DEADLINE_SEC,
+                            maxEstimatedTokens = tokensValue ?: ScheduledTask.DEFAULT_MAX_TOKENS,
+                            lastRunDate = prior?.lastRunDate,
+                            lastResult = prior?.lastResult,
+                            failStreak = prior?.failStreak ?: 0,
+                            suspendedByFuse = prior?.suspendedByFuse ?: false,
+                        ),
+                    )
+                    onDone()
+                }
+            },
+            enabled = canSave,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            Text(stringResource(R.string.common_save))
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+}

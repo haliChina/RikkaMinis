@@ -93,6 +93,8 @@ object ConfigBackup {
         val chatMessagesImported: Int,
         /** Custom thinking rules restored (re-attached to their provider). */
         val thinkingRulesImported: Int,
+        /** [feat/scheduled-tasks-l0] Scheduled-tasks document restored. */
+        val scheduledTasksImported: Boolean,
         /** Artifact files restored (shared/ + mcp data, from the embedded zip). */
         val artifactFilesImported: Int,
         /** True when the payload carried a WebDAV server config that was applied. */
@@ -132,6 +134,11 @@ object ConfigBackup {
         val chatSessions: List<JSONObject>,
         val chatMessages: List<JSONObject>,
         val chatTruncated: JSONObject?,
+        // [feat/scheduled-tasks-l0] Raw scheduled-tasks document (brief §6.6:
+        // tasks.json rides the user-config backup). Null when the caller has
+        // no store access (JVM tests) — the section is omitted, which import
+        // treats exactly like a pre-L0 backup.
+        val scheduledTasks: JSONObject? = null,
     )
 
     /**
@@ -162,11 +169,14 @@ object ConfigBackup {
         chatWindowDays: Int = 90,
         artifactRoots: List<File>? = null,
         webDavConfig: WebDavConfig? = null,
+        // [feat/scheduled-tasks-l0] Scheduled-tasks document from the store
+        // (null = omit the section; import side skips it like a pre-L0 file).
+        scheduledTasks: JSONObject? = null,
     ): String {
         val sections = buildSections(
             providerRepo, includeSecrets, envVarRepo, skillRepo, memoryRepo,
             mcpRepo, chatRepo, chatWindowDays, artifactRoots,
-        )
+        ).copy(scheduledTasks = scheduledTasks)
         val payload = buildPayloadObject(sections, includeSecrets, webDavConfig).toString()
         // [T-backup-export-size-cap] Enforce the same ceiling on the export
         // side that import already checks (MAX_PAYLOAD_BYTES). With the byte
@@ -208,6 +218,10 @@ object ConfigBackup {
         put("chatSessions", JSONArray(sections.chatSessions))
         put("chatMessages", JSONArray(sections.chatMessages))
         sections.chatTruncated?.let { put("chatTruncated", it) }
+        // [feat/scheduled-tasks-l0] Scheduled-tasks tasks ride the user-config
+        // backup (brief §6.6). Additive section: absent in pre-L0 backups, and
+        // import treats absence as "nothing to restore" (no version bump).
+        sections.scheduledTasks?.let { put("scheduledTasks", it) }
         // [T-auto-backup-assets] The WebDAV server config rides the same
         // secrets gate as provider keys: it contains the server password.
         // Without secrets we never carry it — a restore that drops every
@@ -243,6 +257,8 @@ object ConfigBackup {
         chatWindowDays: Int = 90,
         artifactRoots: List<File>? = null,
         webDavConfig: WebDavConfig? = null,
+        // [feat/scheduled-tasks-l0] Same document as the String export path.
+        scheduledTasks: JSONObject? = null,
         writer: java.io.Writer,
     ): Int {
         // Same assembly as the String path — buildSections is the single
@@ -250,7 +266,7 @@ object ConfigBackup {
         val sections = buildSections(
             providerRepo, includeSecrets, envVarRepo, skillRepo, memoryRepo,
             mcpRepo, chatRepo, chatWindowDays, artifactRoots,
-        )
+        ).copy(scheduledTasks = scheduledTasks)
         // The skeleton is the SAME tree the String path builds, minus the chat
         // arrays: buildPayloadObject is the single source of truth for field
         // set and order, so the two paths cannot drift. JSONArray(Collection)
@@ -270,6 +286,7 @@ object ConfigBackup {
             "providers", "thinkingRules", "groups", "envVars", "skills",
             "memoryFiles", "mcpServers", "artifacts", "chatSessions",
             "chatMessages", "chatTruncated", "webdavConfig", "readFailures",
+            "scheduledTasks",
         )
         val dropped = BackupStreamWriter.missingFrameKeys(frameKeys, skeletonJson.keys().asSequence().toList())
         check(dropped.isEmpty()) {
@@ -764,6 +781,10 @@ object ConfigBackup {
         chatRepo: ChatRepository? = null,
         artifactRoots: List<File>? = null,
         onWebDavConfig: ((WebDavConfig) -> Unit)? = null,
+        // [feat/scheduled-tasks-l0] Restores the scheduled-tasks document via
+        // the store (caller supplies the suspension point — this class has no
+        // Context). Absent/null section = pre-L0 backup, stage skipped.
+        onScheduledTasks: (suspend (JSONObject) -> Unit)? = null,
     ): ImportResult {
         // [fix-audit-p1-2] Reject oversized documents BEFORE any parsing /
         // decoding: a backup with embedded skill archives or chat history is
@@ -814,6 +835,7 @@ object ConfigBackup {
         var thinkingRulesImported = 0
         var artifactFilesImported = 0
         var webdavConfigImported = false
+        var scheduledTasksImported = false
         // [T-auto-backup-assets] Stage 1 records every processed provider's
         // (providerType, label) → restored instance id so the thinking-rules
         // stage can re-attach rules to the instance that now owns the label
@@ -1359,6 +1381,27 @@ object ConfigBackup {
             }
         }
 
+        // -- scheduledTasks (brief §6.6: the whole tasks.json rides the
+        // user-config backup) --
+        // The document is handed over verbatim; the store parses it through
+        // the same defensive codec as the live file (malformed entries drop,
+        // never the whole file). globalEnabled is preserved as authored in the
+        // backup — §5.4's factory-off only governs fresh installs; a backup is
+        // the user's explicit configuration snapshot.
+        val scheduledObj = root.optJSONObject("scheduledTasks")
+        if (scheduledObj != null) {
+            if (onScheduledTasks != null) {
+                try {
+                    onScheduledTasks(scheduledObj)
+                    scheduledTasksImported = true
+                } catch (t: Throwable) {
+                    skipped.add("scheduled tasks: restore failed (${t.message})")
+                }
+            } else {
+                skipped.add("scheduled tasks: not restorable here")
+            }
+        }
+
 
         } catch (t: Throwable) {
             fatal = t.message ?: "import failed"
@@ -1377,6 +1420,7 @@ object ConfigBackup {
             thinkingRulesImported = thinkingRulesImported,
             artifactFilesImported = artifactFilesImported,
             webdavConfigImported = webdavConfigImported,
+            scheduledTasksImported = scheduledTasksImported,
             skipped = skipped,
             hadSecrets = root.optBoolean("includesSecrets", false),
             fatal = fatal,

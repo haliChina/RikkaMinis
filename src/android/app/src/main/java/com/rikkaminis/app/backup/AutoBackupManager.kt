@@ -127,6 +127,8 @@ object AutoBackupManager {
                     File(app.filesDir, "minis-global/mcp-servers"),
                 ),
                 webDavConfig = WebDavConfigStore(app).load(),
+                scheduledTasks = com.rikkaminis.app.scheduled.ScheduledTasksStore
+                    .exportDocument(app),
             )
 
         val dir = File(app.filesDir, DIR).apply { mkdirs() }

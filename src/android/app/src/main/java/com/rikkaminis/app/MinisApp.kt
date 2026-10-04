@@ -773,6 +773,14 @@ class MinisApp : Application(), ImageLoaderFactory {
         )
         SessionActivityTracker.setCompletionListener { sessionId, isError ->
             backgroundTaskNotifier.notifyTaskCompleted(sessionId, isError)
+            // [feat/scheduled-tasks-l0] Same single-listener chain: let the
+            // scheduled runner settle its dispatches (B5: never add a second
+            // listener — setCompletionListener overwrites).
+            com.rikkaminis.app.scheduled.ScheduledTaskRunner.onSessionSettled(
+                this@MinisApp,
+                sessionId,
+                isError,
+            )
         }
 
         // [T-android-config-confirm-timeout] Wire the config-confirm background
@@ -816,6 +824,12 @@ class MinisApp : Application(), ImageLoaderFactory {
                 // unless enabled AND the calendar day rolled over.
                 if (wasBackgrounded) {
                     com.rikkaminis.app.backup.AutoBackupManager.runIfDue(this@MinisApp)
+                }
+                // [feat/scheduled-tasks-l0] Daily scheduled tasks wake on the
+                // same background→foreground beat (brief §2: trigger shape
+                // mirrors AutoBackupManager; no alarm, no workmanager, L0).
+                if (wasBackgrounded) {
+                    com.rikkaminis.app.scheduled.ScheduledTaskRunner.runIfDue(this@MinisApp)
                 }
                 // T298: as soon as the app transitions background → foreground,
                 // clear any task-completed notifications still in the tray.

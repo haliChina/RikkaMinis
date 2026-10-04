@@ -1623,4 +1623,42 @@
     <string name="newer_db_body">当前安装的 RikkaMinis 比生成这些数据的版本旧，无法安全打开数据库。\n\n没有删除任何内容——你的会话仍完整保存在这台设备上。重新安装较新的 RikkaMinis 版本，数据就会回来。</string>
     <string name="newer_db_versions">此版本支持数据格式 %1$d</string>
     <string name="newer_db_exit">关闭</string>
+
+    <!-- [feat/scheduled-tasks-l0] Scheduled tasks (Settings > Agent Runtime). -->
+    <string name="scheduled_tasks_entry">定时任务</string>
+    <string name="scheduled_tasks_entry_subtitle">每天在窗口内首次打开 app 时自动执行任务</string>
+    <string name="scheduled_tasks_title">定时任务</string>
+    <string name="scheduled_new_task">新建任务</string>
+    <string name="scheduled_default_task_title">未命名任务</string>
+    <string name="scheduled_global_footer">总开关关闭时，不进行任何定时检查，也不会产生 [scheduled-run] 日志。</string>
+    <string name="scheduled_global_switch">启用定时任务</string>
+    <string name="scheduled_global_switch_subtitle">总开关；新建任务默认为关闭状态</string>
+    <string name="scheduled_list_header">任务列表</string>
+    <string name="scheduled_list_footer">任务在当天窗口内、app 进入前台时执行；每天至多一次，同一时间只运行一个任务。</string>
+    <string name="scheduled_empty_hint">还没有定时任务。点「新建任务」创建一个——例如每天早上生成一份摘要。任务默认关闭，创建后需手动开启。</string>
+    <string name="scheduled_resume">恢复</string>
+    <string name="scheduled_state_suspended">连续失败 %1$d 次，已挂起</string>
+    <string name="scheduled_state_ok">上次运行成功（%1$s）</string>
+    <string name="scheduled_state_failed">上次失败（%1$s）</string>
+    <string name="scheduled_state_never_ran">尚未运行</string>
+    <string name="scheduled_new_title">新建定时任务</string>
+    <string name="scheduled_edit_title">编辑定时任务</string>
+    <string name="scheduled_section_identity">任务内容</string>
+    <string name="scheduled_identity_footer">任务在新建的独立会话中执行，不影响当前聊天。</string>
+    <string name="scheduled_field_title">标题（可选）</string>
+    <string name="scheduled_field_prompt">任务提示词</string>
+    <string name="scheduled_prompt_placeholder">例如：汇总我在 GitHub 的通知并生成一份摘要</string>
+    <string name="scheduled_section_window">每日窗口</string>
+    <string name="scheduled_window_footer">24 小时制 HH:MM，开始需早于结束。任务只在窗口内的首次检查时运行，每天至多一次。</string>
+    <string name="scheduled_field_window_start">开始</string>
+    <string name="scheduled_field_window_end">结束</string>
+    <string name="scheduled_section_budget">预算</string>
+    <string name="scheduled_budget_footer">超出任一上限时运行会被终止：回合数、时长（秒）或预估 token。</string>
+    <string name="scheduled_field_max_turns">最大回合数</string>
+    <string name="scheduled_field_deadline">时长上限（秒）</string>
+    <string name="scheduled_field_max_tokens">预估 token 上限</string>
+    <string name="scheduled_delete_title">删除定时任务？</string>
+    <string name="scheduled_delete_body">「%1$s」将被永久删除。</string>
+    <string name="scheduled_fuse_notification_title">定时任务已挂起</string>
+    <string name="scheduled_fuse_notification_body">「%1$s」连续失败 %2$d 次，已自动停用。可在设置中恢复。</string>
 </resources>

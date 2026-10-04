@@ -4,7 +4,9 @@ import android.content.Context
 import com.rikkaminis.app.MinisApp
 import com.rikkaminis.app.R
 import com.rikkaminis.app.agent.runtime.AgentRunBudgetCeilings
+// debug-ok: scheduled dispatch goes through the same headless chain as SessionsOffloadHandler (brief §5.5, user-consented); no DebugServer/5321 markers in this closure
 import com.rikkaminis.app.debug.ChatMutationMethods
+// debug-ok: same audited scheduled dispatch chain (HeadlessChatRunner.ensureSession)
 import com.rikkaminis.app.debug.HeadlessChatRunner
 import com.rikkaminis.app.diagnostics.MemorySpikeRecorder
 import com.rikkaminis.app.logging.AppLogger

@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 
 /**
@@ -31,6 +32,26 @@ object ScheduledTasksStore {
     private val lock = Mutex()
 
     fun fileFor(context: Context): File = File(File(context.filesDir, DIR_NAME), FILE_NAME)
+
+    /**
+     * The whole document as a JSON object for the config backup's
+     * "scheduledTasks" section (ConfigBackup.export param [scheduledTasks]).
+     */
+    suspend fun exportDocument(context: Context): JSONObject = lock.withLock {
+        JSONObject(loadLocked(context).let(ScheduledTasksCodec::encode))
+    }
+
+    /**
+     * Restore side of the backup section: parse through the same defensive
+     * codec as the live file (malformed entries drop, never the whole file)
+     * and write atomically. Runs inside the store mutex — the crash-recovery
+     * marker never survives a restore (the restored device has no in-flight
+     * run), matching the brief's process-local single-flight truth.
+     */
+    suspend fun importDocument(context: Context, document: JSONObject) = lock.withLock {
+        val file = ScheduledTasksCodec.parse(document.toString())
+        writeLocked(context, file.copy(running = null))
+    }
 
     suspend fun load(context: Context): ScheduledTasksFile = withContext(Dispatchers.IO) {
         lock.withLock { loadLocked(context) }

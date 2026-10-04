@@ -1699,4 +1699,42 @@
     <string name="newer_db_body">This copy of RikkaMinis is older than the build that created your data, so it cannot open it safely.\n\nNothing has been deleted — your conversations are intact on this device. Reinstall the newer version of RikkaMinis and everything will be there.</string>
     <string name="newer_db_versions">This version supports data format %1$d</string>
     <string name="newer_db_exit">Close</string>
+
+    <!-- [feat/scheduled-tasks-l0] Scheduled tasks (Settings > Agent Runtime). -->
+    <string name="scheduled_tasks_entry">Scheduled tasks</string>
+    <string name="scheduled_tasks_entry_subtitle">Runs tasks on the first app open inside their daily window</string>
+    <string name="scheduled_tasks_title">Scheduled tasks</string>
+    <string name="scheduled_new_task">New task</string>
+    <string name="scheduled_default_task_title">Untitled task</string>
+    <string name="scheduled_global_footer">While the master switch is off, no scheduled checks happen and no [scheduled-run] lines are logged.</string>
+    <string name="scheduled_global_switch">Enable scheduled tasks</string>
+    <string name="scheduled_global_switch_subtitle">Master switch; new tasks start disabled</string>
+    <string name="scheduled_list_header">Tasks</string>
+    <string name="scheduled_list_footer">Tasks run once per day, on the first foreground check inside their window; at most one task runs at a time.</string>
+    <string name="scheduled_empty_hint">No scheduled tasks yet. Tap New task above to create one — for example, a daily morning summary. Tasks start disabled; enable them after creating.</string>
+    <string name="scheduled_resume">Resume</string>
+    <string name="scheduled_state_suspended">%1$d failures in a row — suspended</string>
+    <string name="scheduled_state_ok">Last run ok (%1$s)</string>
+    <string name="scheduled_state_failed">Last run failed (%1$s)</string>
+    <string name="scheduled_state_never_ran">Never ran</string>
+    <string name="scheduled_new_title">New scheduled task</string>
+    <string name="scheduled_edit_title">Edit scheduled task</string>
+    <string name="scheduled_section_identity">Task</string>
+    <string name="scheduled_identity_footer">The task runs in its own freshly created session and never touches the current chat.</string>
+    <string name="scheduled_field_title">Title (optional)</string>
+    <string name="scheduled_field_prompt">Task prompt</string>
+    <string name="scheduled_prompt_placeholder">e.g. Summarize my GitHub notifications</string>
+    <string name="scheduled_section_window">Daily window</string>
+    <string name="scheduled_window_footer">24-hour HH:MM, start before end. The task runs on the first check inside the window, once per day.</string>
+    <string name="scheduled_field_window_start">Start</string>
+    <string name="scheduled_field_window_end">End</string>
+    <string name="scheduled_section_budget">Budget</string>
+    <string name="scheduled_budget_footer">The run stops when any limit is reached: turns, wall-clock seconds, or estimated tokens.</string>
+    <string name="scheduled_field_max_turns">Max turns</string>
+    <string name="scheduled_field_deadline">Time limit (seconds)</string>
+    <string name="scheduled_field_max_tokens">Estimated token limit</string>
+    <string name="scheduled_delete_title">Delete scheduled task?</string>
+    <string name="scheduled_delete_body">“%1$s” will be permanently deleted.</string>
+    <string name="scheduled_fuse_notification_title">Scheduled task suspended</string>
+    <string name="scheduled_fuse_notification_body">“%1$s” failed %2$d times in a row and was disabled. Resume it in Settings.</string>
 </resources>

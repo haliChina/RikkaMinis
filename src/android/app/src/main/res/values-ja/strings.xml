@@ -1598,4 +1598,42 @@
     <string name="newer_db_body">インストール中の RikkaMinis は、このデータを作成したバージョンよりも古いバージョンのため、データベースを安全に開けません。\n\n何も削除されていません — 会話はこの端末上でそのまま残っています。新しいバージョンの RikkaMinis を再インストールすれば、すべてのデータが戻ります。</string>
     <string name="newer_db_versions">このバージョンはデータ形式 %1$d をサポートします</string>
     <string name="newer_db_exit">閉じる</string>
+
+    <!-- [feat/scheduled-tasks-l0] Scheduled tasks (Settings > Agent Runtime). -->
+    <string name="scheduled_tasks_entry">定時タスク</string>
+    <string name="scheduled_tasks_entry_subtitle">1 日のウィンドウ内で最初にアプリを開いた時にタスクを実行</string>
+    <string name="scheduled_tasks_title">定時タスク</string>
+    <string name="scheduled_new_task">新規タスク</string>
+    <string name="scheduled_default_task_title">無題タスク</string>
+    <string name="scheduled_global_footer">マスタースイッチがオフの間は定時チェックも [scheduled-run] ログも行いません。</string>
+    <string name="scheduled_global_switch">定時タスクを有効化</string>
+    <string name="scheduled_global_switch_subtitle">マスタースイッチ。新規タスクは既定でオフです</string>
+    <string name="scheduled_list_header">タスク一覧</string>
+    <string name="scheduled_list_footer">タスクは日次ウィンドウ内の最初のフォアグラウンド復帰時に実行。1 日 1 回まで、同時に 1 つのみ。</string>
+    <string name="scheduled_empty_hint">定時タスクはまだありません。上の「新規タスク」から作成できます（例: 毎朝の要約）。タスクは既定でオフです。</string>
+    <string name="scheduled_resume">再開</string>
+    <string name="scheduled_state_suspended">連続 %1$d 回失敗 — 停止中</string>
+    <string name="scheduled_state_ok">前回成功（%1$s）</string>
+    <string name="scheduled_state_failed">前回失敗（%1$s）</string>
+    <string name="scheduled_state_never_ran">未実行</string>
+    <string name="scheduled_new_title">定時タスクを作成</string>
+    <string name="scheduled_edit_title">定時タスクを編集</string>
+    <string name="scheduled_section_identity">タスク内容</string>
+    <string name="scheduled_identity_footer">タスクは新しい独立セッションで実行され、現在のチャットには影響しません。</string>
+    <string name="scheduled_field_title">タイトル（任意）</string>
+    <string name="scheduled_field_prompt">タスクプロンプト</string>
+    <string name="scheduled_prompt_placeholder">例: GitHub の通知をまとめて要約する</string>
+    <string name="scheduled_section_window">日次ウィンドウ</string>
+    <string name="scheduled_window_footer">24 時間制の HH:MM、開始は終了より前。ウィンドウ内の最初のチェック時に 1 日 1 回実行します。</string>
+    <string name="scheduled_field_window_start">開始</string>
+    <string name="scheduled_field_window_end">終了</string>
+    <string name="scheduled_section_budget">予算</string>
+    <string name="scheduled_budget_footer">いずれかの上限（ターン数・経過秒・推定トークン）に達すると実行を終了します。</string>
+    <string name="scheduled_field_max_turns">最大ターン数</string>
+    <string name="scheduled_field_deadline">時間上限（秒）</string>
+    <string name="scheduled_field_max_tokens">推定トークン上限</string>
+    <string name="scheduled_delete_title">定時タスクを削除しますか？</string>
+    <string name="scheduled_delete_body">「%1$s」は完全に削除されます。</string>
+    <string name="scheduled_fuse_notification_title">定時タスクを停止しました</string>
+    <string name="scheduled_fuse_notification_body">「%1$s」が %2$d 回連続で失敗したため停止しました。設定から再開できます。</string>
 </resources>
