@@ -7,8 +7,7 @@
 ## 0. TL;DR
 
 - 简报 §6 施工清单 1–4、6 全部落地；§6.5 按条件句跳过（任务书 A 已于同日撤回，见 backlog §55）；§9 三件套中报告/backlog/dev-history 已交，**真机清单交用户，agent 不自宣闭环**。
-- §7 阶梯：JVM 一级 ✅（35 测试 + 熔断变异负向对照变红）；静态门禁 ✅（i18n 从红转绿，四层同步绿；debug 守卫仅剩 2 处 **main 基线遗留**，与 B2 一并登记）；真机 = 待用户逐项验。
-- 已触发 feature 分支 CI（run `37213285493`）——store/runner/UI 首次真实编译（本地无 android.jar）。
+- §7 阶梯：JVM 一级 ✅（35 测试 + 熔断变异负向对照变红）；静态门禁 ✅（i18n 从红转绿，四层同步绿；debug 守卫仅剩 2 处 **main 基线遗留**，与 B2 一并登记）；**CI ✅（run 37213523354 全绿）**；真机 = 待用户逐项验。
 
 ## 1. 接线点签名核对结果（简报 §2 表格逐项）
 
@@ -77,9 +76,10 @@ import com.rikkaminis.app.debug.HeadlessChatRunner
 
 ## 7. CI 状态与风险
 
-- run `37213285493`（workflow_dispatch @ feat/scheduled-tasks-l0-1004）：**首验 store/runner/UI 全量编译**（本地无 gradle/android.jar，这些文件此前从未编译）。**若红，最可能是 kotlinc 版本差异或 android 依赖面**——修复承诺：CI 反馈后即时跟进。
-- 合并路径：CI 绿 → 开 PR（scan-gate 会再跑）→ squash/merge 由用户定。**分支含 merge commit（6eecc9b8），不 force-push。**
-- 行号基线：本报告行号以 `9f9bb630` 为准。
+- **run `37213523354`（workflow_dispatch @ cdaf6b49）：✅ SUCCESS**——pre-build scan gate / 全量单测（含 scheduled 35 测试与 backup payload 测试）/ instrumented compile gate / assembleRelease / APK 签名与内容验证全绿。
+- 首轮 run `37213285493` 红（预期内的首次真实编译暴露）：`ExportSections` 非 data class 无 `copy()`（改为 buildSections 直传参数）+ 编辑屏漏 `MinisTextButton` import——均修复于 `cdaf6b49`。
+- 合并路径：CI 已绿 → 开 PR（scan-gate 会再跑）→ squash/merge 由用户定。**分支含 merge commit（6eecc9b8），不 force-push。**
+- 行号基线：本报告行号以 `cdaf6b49` 为准。
 
 ## 8. 文件清单（本会话改动，21 files +1450）
 
@@ -88,6 +88,7 @@ import com.rikkaminis.app.debug.HeadlessChatRunner
 
 ## 9. 下一步
 
-1. 等 CI（37213285493）→ 红即修；绿则交 PR + 真机清单
+1. ~~等 CI~~ ✅ run 37213523354 全绿 → 开 PR（scan-gate 再跑）→ 用户拍板合并
 2. B2 单独立项（backlog §56 已登记触发条件）
 3. 合并后两周 `[scheduled-run]` 数据回收 → 按简报 §8 决定是否升级
+4. 真机清单（§6.3）交用户逐项验——合并前或合并后均可，七项全过前 L0 不算交付闭环
