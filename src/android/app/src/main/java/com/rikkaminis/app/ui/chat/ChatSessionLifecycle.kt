@@ -1097,6 +1097,13 @@ internal fun ChatViewModel.loadSession() {
         )
         return
     }
+    // [fix/compact-exhausted-rescue-1005] Opening a session is a user action:
+    // re-arm the EXHAUSTED rescue gate (reset #3) so a freshly opened session
+    // can rescue-compact once if the restored transcript is already past the
+    // hard ceiling. Placed AFTER the safe-mode early return above: that path
+    // skips session restore entirely (crash-recovery loop) — the user never
+    // actually entered a session there, so it must not re-arm the gate.
+    rescueAttemptedForCompact = false
     viewModelScope.launch {
         // [T-HANG-DIAG] timing markers to localise where session entry
         // stalls. Sentinel-tagged so a single grep -v can strip them

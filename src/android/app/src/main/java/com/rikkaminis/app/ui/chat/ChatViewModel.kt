@@ -2150,6 +2150,10 @@ class ChatViewModel(
      * the resulting summary text.
      */
     fun runCompactNow() {
+        // [fix/compact-exhausted-rescue-1005] Manual compact is a user action:
+        // re-arm the EXHAUSTED rescue gate (reset #2, shared by the drawer
+        // footer / "..." menu and the debug RPC chat.session.compact).
+        rescueAttemptedForCompact = false
         compactAll()
     }
 
@@ -2314,6 +2318,25 @@ class ChatViewModel(
      */
     @Volatile
     internal var offloadUnderDelivered = false
+
+    /**
+     * [fix/compact-exhausted-rescue-1005] EXHAUSTED 救援门（防风暴），形状对齐
+     * [lastAutoCompactAtMs]：由调用方持有、传入 [ContextCompactor.decide]（decide
+     * 保持纯函数）。false = 尚未救援过 → RESCUE；true = 已救援过 → 停摆兜底，
+     * 救援失败不重试风暴。
+     *
+     * 复位（清回 false）= 用户动作，三处接线：
+     *  1. [sendMessage] — 新 user 消息真正发出（守卫全部通过、即将 persist 时）；
+     *  2. [ChatSlashTokenExt.tryExecuteInputAsSlashCommand] 的 `/compact` 别名 +
+     *     [runCompactNow]（菜单/抽屉与 debug RPC 共用入口）— 手动压缩；
+     *  3. [ChatSessionLifecycle.loadSession] — 会话打开。
+     *
+     * 线程模型与 [offloadUnderDelivered] 相同：auto-compact 裁决全部发生在
+     * 主线程（sendMessage 同步段 / loop 回合边界），@Volatile 足够。不持久化：
+     * 冷启动后 tail 估算自然变小，第一次超窗裁决即可再救援一次，风暴面不变。
+     */
+    @Volatile
+    internal var rescueAttemptedForCompact = false
 
     /**
      * Result of a bounded walk-back. `priorIdx` is the agentHistory index
@@ -3386,6 +3409,13 @@ class ChatViewModel(
         // on the in-stream guard; the send coroutine awaits completion before
         // persisting the user message (see awaitAutoCompactIfNeeded).
         maybeTriggerAutoCompact()
+        // [fix/compact-exhausted-rescue-1005] A real user send re-arms the
+        // EXHAUSTED rescue gate: this message is about to be persisted, so
+        // this is the "new user message" reset per the 2026-10-05 design
+        // (send / manual compact / session open). Guards above (exhausted
+        // dialog, compaction busy, blank input) already returned, so a
+        // blocked or dropped send never re-arms the gate.
+        rescueAttemptedForCompact = false
         // A fresh send supersedes any pending resume — mirror iOS which clears
         // canResume at the top of send().
         _canResume.value = false

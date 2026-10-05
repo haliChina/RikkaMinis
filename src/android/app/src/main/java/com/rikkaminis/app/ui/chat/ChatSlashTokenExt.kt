@@ -315,6 +315,10 @@ fun ChatViewModel.tryExecuteInputAsSlashCommand(text: String): Boolean {
     // to the model as a plain message. Anything else routes through the
     // roster as before.
     if (name == "compact") {
+        // [fix/compact-exhausted-rescue-1005] Manual /compact is a user action:
+        // re-arm the EXHAUSTED rescue gate (reset #2, same contract as
+        // runCompactNow).
+        rescueAttemptedForCompact = false
         compactAll()
         return true
     }
