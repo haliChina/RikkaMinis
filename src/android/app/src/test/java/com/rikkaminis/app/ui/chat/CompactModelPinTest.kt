@@ -196,6 +196,23 @@ class CompactModelPinTest {
         assertTrue(atPrepend < atResolver)
     }
 
+    // ── follow-up review fixes: health gate + reachability guard ─────
+
+    @Test
+    fun `resolver applies the group-router health gate`() {
+        val src = readRepoFile("app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt")
+        val atHealthGate = src.indexOf("groupRouter.isUsable(entryId)")
+        val atResolverDecl = src.indexOf("fun ChatViewModel.resolveCompactionPinProvider(entryId: String)")
+        assertTrue("health gate missing in resolver", atHealthGate >= 0)
+        assertTrue("health gate must sit inside the resolver", atResolverDecl >= 0 && atResolverDecl < atHealthGate)
+    }
+
+    @Test
+    fun `reachability guard counts the active-pin case`() {
+        val src = readRepoFile("app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt")
+        assertTrue("active-pin reachability guard missing", src.indexOf("pinId == _activeEntryId.value") >= 0)
+    }
+
     private fun readRepoFile(relative: String): String {
         var dir: java.io.File? = java.io.File(System.getProperty("user.dir"))
         while (dir != null) {
