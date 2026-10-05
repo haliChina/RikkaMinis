@@ -52,6 +52,7 @@ import com.rikkaminis.app.ui.chat.isContextTooLargeError
 import com.rikkaminis.app.ui.chat.isPersistedUserPrompt
 import com.rikkaminis.app.ui.chat.isToolResultOnly
 import com.rikkaminis.app.ui.chat.neutralizeCompactArtifacts
+import com.rikkaminis.app.ui.chat.prependCompactionPin
 import com.rikkaminis.app.ui.chat.ordersCompactionCandidates
 import com.rikkaminis.app.ui.chat.resolveBudgetAnchorIdx
 import com.rikkaminis.app.ui.chat.resolveCompactAnchorIdx
