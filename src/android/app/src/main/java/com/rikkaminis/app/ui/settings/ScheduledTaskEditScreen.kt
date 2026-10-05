@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -256,6 +257,25 @@ fun ScheduledTaskEditScreen(
                 .padding(horizontal = 16.dp),
         ) {
             Text(stringResource(R.string.common_save))
+        }
+
+        // Destructive delete: bottom of the editor, mirroring
+        // ProviderDetailScreen's pattern (error container color + confirm
+        // dialog, never a bare swipe). Hidden for brand-new tasks — there
+        // is nothing to delete yet.
+        if (!isNew) {
+            Spacer(Modifier.height(12.dp))
+            MinisButton(
+                onClick = { showDeleteConfirm = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                ),
+            ) {
+                Text(stringResource(R.string.common_delete))
+            }
         }
         Spacer(Modifier.height(20.dp))
     }
