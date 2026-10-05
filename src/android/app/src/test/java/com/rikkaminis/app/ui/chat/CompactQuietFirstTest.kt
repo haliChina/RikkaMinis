@@ -124,7 +124,7 @@ class CompactQuietFirstTest {
 
     @Test
     fun `compaction call site wires the quiet-first chain and budgets`() {
-        val src = readRepoFile("app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt")
+        val src = readRepoFile("app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt")
         val atBudgetCall = src.indexOf("withTimeoutOrNull(budgetMs) { sendVia(candidate) }")
         val atChainBuild = src.indexOf(
             "ordersCompactionCandidates(provider, buildFallbackProviders(provider))",

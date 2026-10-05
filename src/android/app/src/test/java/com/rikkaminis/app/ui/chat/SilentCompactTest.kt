@@ -27,7 +27,7 @@ import org.junit.Test
  * `toolName = iconKind` (ChatViewModel.kt:1871), and the hard-trim notice
  * (ChatContextWindow.kt:430), the context-full notice
  * (ChatContextWindowExt.kt:316) and the failure banner
- * (ChatSessionLifecycle.kt:418) all pass `iconKind = "compact"` — the SAME
+ * (CompactOrchestration.kt) all pass `iconKind = "compact"` — the SAME
  * value the divider uses. The old fixture gave the trim notice
  * `toolName = "trim"`, a value no production call site ever produces, so the
  * test stayed green while the real notice was being deleted with the card.

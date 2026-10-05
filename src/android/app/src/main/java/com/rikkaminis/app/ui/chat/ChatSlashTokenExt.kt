@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Psychology
 import com.rikkaminis.app.logging.AppLogger
 import com.rikkaminis.app.data.model.ThinkingLevel
+import com.rikkaminis.app.conversation.compactAll
 import com.rikkaminis.app.R
 
 // [FE-5 batch 8] Slash command + session-token cluster extracted verbatim from

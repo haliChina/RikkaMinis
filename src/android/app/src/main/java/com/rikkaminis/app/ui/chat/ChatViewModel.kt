@@ -32,6 +32,7 @@ import com.rikkaminis.app.data.ContextOffload
 import com.rikkaminis.app.data.ContextPolicy
 import com.rikkaminis.app.conversation.ContextCompactor
 import com.rikkaminis.app.conversation.ContextGrowthTracker
+import com.rikkaminis.app.conversation.compactAll
 import com.rikkaminis.app.diagnostics.SessionIdAliases
 import com.rikkaminis.app.logging.AppLogger
 import com.rikkaminis.app.data.FileMentionIndex

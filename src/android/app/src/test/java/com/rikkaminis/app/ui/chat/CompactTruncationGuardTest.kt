@@ -4,6 +4,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.rikkaminis.app.conversation.compactionCandidateBudgetMs
+import com.rikkaminis.app.conversation.compactSummaryIsTruncated
+import com.rikkaminis.app.conversation.compactSummaryTruncatedFailure
 
 /**
  * JVM tests for [fix/compact-truncation-guard-1005]:
@@ -133,7 +136,7 @@ class CompactTruncationGuardTest {
     @Test
     fun `success branch guards truncated summaries before adopting the text`() {
         val lifecycle = readRepoFile(
-            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+            "app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt",
         )
         val successRegion = lifecycle
             .substringAfter("is ProviderExecutionGateway.SendResult.Success -> {")
@@ -164,7 +167,7 @@ class CompactTruncationGuardTest {
     @Test
     fun `budget call site resolves the candidate budget through the helper`() {
         val lifecycle = readRepoFile(
-            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+            "app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt",
         )
         val atCall = lifecycle.indexOf("val budgetMs = compactionCandidateBudgetMs(")
         assertTrue("budget calc not wired through compactionCandidateBudgetMs", atCall >= 0)

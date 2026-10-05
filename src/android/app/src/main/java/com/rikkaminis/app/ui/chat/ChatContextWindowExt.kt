@@ -4,6 +4,7 @@ import com.rikkaminis.app.logging.AppLogger
 import com.rikkaminis.app.data.AgentRuntimeLimitsPrefs
 import com.rikkaminis.app.data.ContextPolicy
 import com.rikkaminis.app.conversation.ContextCompactor
+import com.rikkaminis.app.conversation.compactAll
 import com.rikkaminis.app.R
 import kotlinx.coroutines.delay
 

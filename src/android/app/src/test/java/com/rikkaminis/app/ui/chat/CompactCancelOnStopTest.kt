@@ -81,7 +81,7 @@ class CompactCancelOnStopTest {
         assertTrue(shellAssign < awaitWait)
 
         val lifecycle = readRepoFile(
-            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+            "app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt",
         )
         assertTrue(
             "compactAll job not stored",
@@ -92,7 +92,7 @@ class CompactCancelOnStopTest {
     @Test
     fun `compact marker insert rethrows cancellation instead of swallowing it`() {
         val lifecycle = readRepoFile(
-            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+            "app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt",
         )
         // The old runCatching swallow must be gone; a try/catch that rethrows
         // CancellationException takes its place.
@@ -176,7 +176,7 @@ class CompactCancelOnStopTest {
         // chains are ordered, so the CancellationException arm MUST precede
         // the generic arm (Exception would otherwise win and re-swallow).
         val lifecycle = readRepoFile(
-            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+            "app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt",
         )
         val region = lifecycle
             .substringAfter("chatRepository.dao.loadMessages(sid).map { it.id }.toSet()")
