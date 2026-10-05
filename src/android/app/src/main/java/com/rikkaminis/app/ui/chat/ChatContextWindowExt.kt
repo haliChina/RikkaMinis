@@ -286,8 +286,24 @@ internal suspend fun ChatViewModel.maybeAutoCompactInLoop(
         minTailTokens = AgentRuntimeLimitsPrefs.autoCompactMinTailTokens().toLong(),
         minIntervalMs = AgentRuntimeLimitsPrefs.autoCompactMinIntervalMin() * 60_000L,
         escalatedFromOffload = escalatedFromOffload && !inCompactBand,
+        // [fix/compact-exhausted-rescue-1005] Once-only EXHAUSTED rescue gate:
+        // open while no rescue has been attempted this user-action cycle.
+        rescueAttempted = rescueAttemptedForCompact,
     )
-    if (decision != ContextCompactor.Decision.AUTO_COMPACT) {
+    if (decision == ContextCompactor.Decision.EXHAUSTED) {
+        // [fix/compact-exhausted-rescue-1005] 停摆兜底：本周期已救援过（decide 里
+        // EXHAUSTED 早退于防抖/尾门，能落到这里的 EXHAUSTED 必然门已关）——保持
+        // 旧行为不重试，skip 行追加 rescue= 段保持单行可 grep。
+        AppLogger.info(
+            ChatViewModel.TAG,
+            "[AutoCompactLoop] skipped: $decision tokens=$lastContextTokens window=$contextWindow tail=$tail " +
+                "compactLine=${policy.compactThreshold} rescue=blocked",
+        )
+        return false
+    }
+    if (decision != ContextCompactor.Decision.AUTO_COMPACT &&
+        decision != ContextCompactor.Decision.RESCUE
+    ) {
         AppLogger.info(
             ChatViewModel.TAG,
             "[AutoCompactLoop] skipped: $decision tokens=$lastContextTokens window=$contextWindow tail=$tail " +
@@ -295,7 +311,18 @@ internal suspend fun ChatViewModel.maybeAutoCompactInLoop(
         )
         return false
     }
-    if (!inCompactBand) {
+    if (decision == ContextCompactor.Decision.RESCUE) {
+        // [fix/compact-exhausted-rescue-1005] 一次性救援：立刻关门——本周期内
+        // （直到下个用户动作）不再有第二次，成败都由下方 folded 判定落日志。
+        rescueAttemptedForCompact = true
+        AppLogger.info(
+            ChatViewModel.TAG,
+            "[AutoCompactLoop] rescue compact at the hard ceiling: EXHAUSTED once-only attempt " +
+                "tokens=$lastContextTokens window=$contextWindow tail=$tail " +
+                "compactLine=${policy.compactThreshold} rescue=attempted",
+        )
+    }
+    if (!inCompactBand && decision == ContextCompactor.Decision.AUTO_COMPACT) {
         AppLogger.info(
             ChatViewModel.TAG,
             "[AutoCompactLoop] escalated below the compact line: this turn's offload under-delivered " +
@@ -347,6 +374,23 @@ internal suspend fun ChatViewModel.maybeAutoCompactInLoop(
             "[AutoCompactLoop] compact attempted but folded nothing " +
                 "(anchor=${markerBefore?.take(8) ?: "nil"} summaryChars=${summaryBefore?.length ?: 0} " +
                 "historySize=${agentHistory.size}) — keeping the hard trim enabled this turn",
+        )
+        // [fix/compact-exhausted-rescue-1005] (C3) A rescue that folded nothing is
+        // the load-bearing observable: it failed, yet the gate stays CLOSED (rescue
+        // is once-only per user-action cycle, failure does not re-arm it) — the
+        // transcript above the ceiling never shrank, so retrying would just storm
+        // provider calls. Single-line rescue= suffix keeps grep-ability; the
+        // plain-AUTO_COMPACT case still logs the bare warning, byte-identical.
+        if (decision == ContextCompactor.Decision.RESCUE) {
+            AppLogger.warning(
+                ChatViewModel.TAG,
+                "[AutoCompactLoop] rescue compact folded nothing — gate stays closed until next user action; rescue=failed",
+            )
+        }
+    } else if (decision == ContextCompactor.Decision.RESCUE) {
+        AppLogger.info(
+            ChatViewModel.TAG,
+            "[AutoCompactLoop] rescue compact folded; the storm gate stays closed until the next user action; rescue=succeeded",
         )
     }
     return folded

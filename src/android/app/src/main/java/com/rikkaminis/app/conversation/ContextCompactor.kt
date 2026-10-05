@@ -80,8 +80,23 @@ object ContextCompactor {
          * 现在 loop 侧也读同一个裁决（[AgentLoopHost.isContextExhausted]，与
          * checkContextBeforeSend 共享 ChatViewModel.contextPressure 实现），
          * 该声明对两个落点都为真。
+         *
+         * [fix/compact-exhausted-rescue-1005]（2026-10-05 拍板）「不应动手」收敛为
+         * 「一次救援后停摆」：EXHAUSTED 且 [rescueAttempted]=false → [RESCUE]；
+         * true → 停摆兜底。动机保留（防空重试墙，见下），但「零压缩」的代价是
+         * summary 冻结、postAnchor 无节制增长（2026-10-04 实测 44–56 万 tokens
+         * vs 25 万窗口停摆 77+ 分钟零压缩；2026-10-05 又现 7 次/4 小时）。
          */
         EXHAUSTED,
+
+        /**
+         * [fix/compact-exhausted-rescue-1005] EXHAUSTED 状态下的**一次性**救援压缩：
+         * EXHAUSTED 且 [rescueAttempted]=false → RESCUE；true → 停摆。防抖与尾部
+         * 闸门不适用于救援（早退见 [decide]）——防风暴由一次性门本身承担。
+         * 复位是用户动作（新 user 消息发出 / 手动 /compact / 会话打开），由调用方
+         * 持有状态、在用户动作处清零——[decide] 保持纯函数，不做任何 IO 或时钟推断。
+         */
+        RESCUE,
     }
 
     /**
@@ -96,6 +111,13 @@ object ContextCompactor {
      * @param nowMs 当前时间戳（可注入便于测试）
      * @param minIntervalMs 自动压缩最小间隔
      * @param minTailTokens 尾部最小 token 量
+     * @param rescueAttempted [fix/compact-exhausted-rescue-1005] EXHAUSTED 状态下的
+     *   救援门：false=尚未救援过（→ [Decision.RESCUE]），true=已救援过（→ 停摆
+     *   [Decision.EXHAUSTED]）。缺省 **true** = 不接管防风暴门：未改造的调用点
+     *   保持「EXHAUSTED 一律跳过」的既有行为。由调用方持有并在用户动作
+     *   （新 user 消息发出 / 手动 /compact / 会话打开）处清零。
+     * @param escalatedFromOffload 是否因 offload 欠交付而要求升级（唯一允许低于
+     *   压缩线触发的例外）
      */
     fun decide(
         estimatedTokens: Int,
@@ -107,6 +129,12 @@ object ContextCompactor {
         nowMs: Long = System.currentTimeMillis(),
         minIntervalMs: Long = DEFAULT_AUTO_COMPACT_MIN_INTERVAL_MS,
         minTailTokens: Long = DEFAULT_AUTO_COMPACT_MIN_TAIL_TOKENS,
+        // [fix/compact-exhausted-rescue-1005] EXHAUSTED-state rescue gate, owned
+        // by the caller (shape mirrors lastAutoCompactAtMs). Defaults to TRUE so
+        // call sites that don't opt in keep the legacy "always skip at the hard
+        // ceiling" behaviour — the gate only opens for callers that hold the
+        // flag and reset it on user actions.
+        rescueAttempted: Boolean = true,
         // [T-ctx-offload-escalation] True when the caller knows this turn's
         // offload pass under-delivered and asks to compact below the compact
         // line. Only bypasses the policy band; the debounce and tail gates
@@ -120,7 +148,17 @@ object ContextCompactor {
         // 自动压缩不该在这种状态下动手（需要用户显式 /compact 或新会话）。
         // [fix/context-exhausted-loop] 「已阻断」现在对 agent loop 的重试路径
         // 也成立——见 Decision.EXHAUSTED 的 KDoc。
-        if (estimatedTokens >= contextWindow) return Decision.EXHAUSTED
+        // [fix/compact-exhausted-rescue-1005] 2026-10-05 收敛：允许**一次**救援压缩，
+        // 否则长任务里压缩永久停摆（summary 冻结、postAnchor 无节制增长）。
+        // 防风暴门 = rescueAttempted（调用方持有，用户动作复位）：未救援过 →
+        // RESCUE；已救援过 → 停摆兜底，救援失败不重试风暴。RESCUE 不下穿
+        // 防抖/尾部两道闸门：它们为「压缩线以下的常规自动压缩」设计（防刚压
+        // 完又压），而救援唯一一次、且本来就受门约束——再叠闸门只会把唯一的
+        // 机会吃掉（2026-10-05 实测 7 次 EXHAUSTED 的 tail 8632–17637 全部高于
+        // 尾门，字段行为不受该取舍影响）。
+        if (estimatedTokens >= contextWindow) {
+            return if (!rescueAttempted) Decision.RESCUE else Decision.EXHAUSTED
+        }
         // 单一事实源：压缩线只由 ContextPolicy 定义。
         // [T-ctx-offload-escalation] 唯一例外：这一轮的 offload 已证明削不动
         // （候选池耗尽，缺口是 offload 结构上够不到的对话文本），调用方显式
