@@ -957,6 +957,7 @@ private fun CompactModelPickerRow(
     available: List<CompactModelChoice>,
     onPick: (String) -> Unit,
     onClear: () -> Unit,
+    showDivider: Boolean = true,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val pinned = available.firstOrNull { it.entryId == pinnedEntryId }
@@ -994,7 +995,15 @@ private fun CompactModelPickerRow(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            )
+        }
+        if (showDivider) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .height(0.5.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             )
         }
     }
