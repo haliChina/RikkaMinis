@@ -141,6 +141,31 @@ class CompactExhaustedRescueTest {
         assertEquals(ContextCompactor.Decision.EXHAUSTED, d)
     }
 
+    // ── §3.3 the C3 skip-line rescue segment (wiring, fragment-pinned) ──
+
+    @Test
+    fun `EXHAUSTED skip line carries a single-line rescue segment`() {
+        // The skip line must stay single-line grep-able with the rescue
+        // segment inline (task-brief-1005-D telemetry-suffix pattern). The
+        // only reachable EXHAUSTED skip has the gate CLOSED (decide()
+        // early-returns EXHAUSTED/RESCUE before the tail/debounce gates),
+        // so the segment is always "blocked" there.
+        val src = readRepoFile("app/src/main/java/com/rikkaminis/app/ui/chat/ChatContextWindowExt.kt")
+        val region = src
+            .substringAfter("internal suspend fun ChatViewModel.maybeAutoCompactInLoop(")
+            .substringBefore("internal suspend fun ChatViewModel.awaitAutoCompactIfNeeded()")
+        val atExhBranch = region.indexOf("if (decision == ContextCompactor.Decision.EXHAUSTED)")
+        val atBlocked = region.indexOf("rescue=blocked")
+        assertTrue("EXHAUSTED skip branch missing", atExhBranch >= 0)
+        assertTrue("rescue=blocked segment missing", atBlocked >= 0)
+        assertTrue("segment must follow the EXHAUSTED branch", atExhBranch < atBlocked)
+        // Exactly one rescue segment in the whole function region.
+        assertEquals(1, Regex("rescue=blocked").findAll(region).count())
+        // Same string literal as the skip line (single-line concatenation).
+        val atSkip = region.indexOf("[AutoCompactLoop] skipped")
+        assertTrue(atSkip >= 0 && atSkip < atBlocked)
+    }
+
     // ── wiring: the gate rides the loop path, resets on user actions ────
     //
     // maybeAutoCompactInLoop lives on ChatViewModel (uninstantiable in JVM),
@@ -171,6 +196,23 @@ class CompactExhaustedRescueTest {
         // must have returned before it.
         val atRescueBranch = region.indexOf("if (decision == ContextCompactor.Decision.RESCUE)")
         assertTrue("RESCUE branch missing", atRescueBranch > atExh)
+    }
+
+    @Test
+    fun `rescue result rides the folded-nothing warning as a single line`() {
+        val src = readRepoFile("app/src/main/java/com/rikkaminis/app/ui/chat/ChatContextWindowExt.kt")
+        val region = src
+            .substringAfter("internal suspend fun ChatViewModel.maybeAutoCompactInLoop(")
+            .substringBefore("internal suspend fun ChatViewModel.awaitAutoCompactIfNeeded()")
+        val atFoldedCheck = region.indexOf("if (!folded)")
+        val atRescueFailed = region.indexOf("rescue=failed")
+        val atRescueOk = region.indexOf("rescue=succeeded")
+        assertTrue("rescue=failed log missing", atRescueFailed >= 0)
+        assertTrue("rescue=succeeded log missing", atRescueOk >= 0)
+        // failed only fires inside the folded-nothing branch; succeeded sits
+        // after it (the else branch).
+        assertTrue(atFoldedCheck >= 0 && atFoldedCheck < atRescueFailed)
+        assertTrue(atRescueFailed < atRescueOk)
     }
 
     @Test
