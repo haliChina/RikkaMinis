@@ -1506,6 +1506,13 @@
     <string name="runtime_limits_compact_tail_desc">自動圧縮はこの数の末尾トークンを下回って切り詰めません — 直近の会話はそのまま残ります。既定 8000。</string>
     <string name="runtime_limits_compact_interval">自動圧縮の間隔（分）</string>
     <string name="runtime_limits_compact_interval_desc">同じ会話で自動圧縮を繰り返す最小間隔（分）。既定 5。</string>
+    <string name="runtime_limits_compact_model">圧縮モデル</string>
+    <string name="runtime_limits_compact_model_desc">自動圧縮時に最初に試すモデル。残りのチェーンはセッションに従います。</string>
+    <string name="runtime_limits_compact_model_follow">セッションに従う</string>
+    <string name="runtime_limits_compact_model_follow_desc">セッション自身のモデルチェーンを使用</string>
+    <string name="runtime_limits_compact_model_stale">無効</string>
+    <string name="runtime_limits_compact_model_choose">選択…</string>
+    <string name="runtime_limits_compact_model_dialog_title">圧縮モデルを選択</string>
     <string name="runtime_limits_memory_inject">メモリ：注入行数</string>
     <string name="runtime_limits_memory_inject_desc">システムプロンプトに注入する最新ログの最大行数。既定 200。</string>
     <string name="runtime_limits_memory_rollup">メモリ：ロールアップ上限（KB）</string>

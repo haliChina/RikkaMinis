@@ -1507,6 +1507,13 @@
     <string name="runtime_limits_compact_tail_desc">Die Auto-Kompaktierung kürzt nie unter so viele Tail-Token — die neueste Unterhaltung bleibt wörtlich erhalten. Standard 8000.</string>
     <string name="runtime_limits_compact_interval">Auto-Kompaktierung: Intervall (Min.)</string>
     <string name="runtime_limits_compact_interval_desc">Mindestabstand in Minuten zwischen Auto-Kompaktierungen derselben Unterhaltung. Standard 5.</string>
+    <string name="runtime_limits_compact_model">Kompaktionsmodell</string>
+    <string name="runtime_limits_compact_model_desc">Modell, das bei automatischer Kompaktierung zuerst versucht wird; der Rest folgt der Sitzung.</string>
+    <string name="runtime_limits_compact_model_follow">Sitzung folgen</string>
+    <string name="runtime_limits_compact_model_follow_desc">Eigene Modellkette der Sitzung verwenden</string>
+    <string name="runtime_limits_compact_model_stale">nicht verfügbar</string>
+    <string name="runtime_limits_compact_model_choose">Auswählen…</string>
+    <string name="runtime_limits_compact_model_dialog_title">Kompaktionsmodell wählen</string>
     <string name="runtime_limits_memory_inject">Speicher: injizierte Zeilen</string>
     <string name="runtime_limits_memory_inject_desc">Maximale Tageslog-Zeilen im System-Prompt. Standard 200.</string>
     <string name="runtime_limits_memory_rollup">Speicher: Rollup-Obergrenze (KB)</string>

@@ -149,6 +149,11 @@ object AgentRuntimeLimitsPrefs {
 
     const val KEY_AUTO_COMPACT_MIN_TAIL_TOKENS = "autoCompactMinTailTokens"
     const val KEY_AUTO_COMPACT_MIN_INTERVAL_MIN = "autoCompactMinIntervalMin"
+    // [feat/compact-model-pin-1005] Empty string == follow the session chain
+    // (pre-panel behavior). Stores a model entry id; resolved + filtered at
+    // chain-build time, never cached beyond the primed volatile below.
+    const val KEY_COMPACT_MODEL_ENTRY_ID = "compactModelEntryId"
+    const val COMPACT_MODEL_ENTRY_DEFAULT = ""
     const val KEY_MEMORY_INJECT_LINES = "memoryInjectLines"
     const val KEY_MEMORY_ROLLUP_INJECT_KB = "memoryRollupInjectKb"
     const val KEY_MEMORY_SEARCH_LINES = "memorySearchLines"
@@ -303,6 +308,7 @@ object AgentRuntimeLimitsPrefs {
     // [feat/chat-tuning-panel-b] Group 5 + 6 caches.
     @Volatile private var cachedCompactTailTokens = COMPACT_TAIL_TOKENS_DEFAULT
     @Volatile private var cachedCompactIntervalMin = COMPACT_INTERVAL_DEFAULT_MIN
+    @Volatile private var cachedCompactModelEntryId = COMPACT_MODEL_ENTRY_DEFAULT
     @Volatile private var cachedMemoryInjectLines = MEMORY_INJECT_LINES_DEFAULT
     @Volatile private var cachedMemoryRollupKb = MEMORY_ROLLUP_KB_DEFAULT
     @Volatile private var cachedMemorySearchLines = MEMORY_SEARCH_LINES_DEFAULT
@@ -368,6 +374,8 @@ object AgentRuntimeLimitsPrefs {
             .coerceIn(COMPACT_TAIL_TOKENS_MIN, COMPACT_TAIL_TOKENS_MAX)
         cachedCompactIntervalMin = p.getInt(KEY_AUTO_COMPACT_MIN_INTERVAL_MIN, COMPACT_INTERVAL_DEFAULT_MIN)
             .coerceIn(COMPACT_INTERVAL_MIN_MIN, COMPACT_INTERVAL_MAX_MIN)
+        cachedCompactModelEntryId =
+            p.getString(KEY_COMPACT_MODEL_ENTRY_ID, COMPACT_MODEL_ENTRY_DEFAULT)?.trim().orEmpty()
         cachedMemoryInjectLines = p.getInt(KEY_MEMORY_INJECT_LINES, MEMORY_INJECT_LINES_DEFAULT)
             .coerceIn(MEMORY_INJECT_LINES_MIN, MEMORY_INJECT_LINES_MAX)
         cachedMemoryRollupKb = p.getInt(KEY_MEMORY_ROLLUP_INJECT_KB, MEMORY_ROLLUP_KB_DEFAULT)
@@ -441,6 +449,13 @@ object AgentRuntimeLimitsPrefs {
     fun autoCompactMinTailTokens(): Int = cachedCompactTailTokens
     /** Minimum interval between auto-compactions, in minutes. */
     fun autoCompactMinIntervalMin(): Int = cachedCompactIntervalMin
+    /**
+     * [feat/compact-model-pin-1005] Pinned compaction model entry id, or ""
+     * to follow the session chain (default — behavior identical to the
+     * pre-panel build). Resolution + health filtering happen at chain-build
+     * time in CompactOrchestration; a stale id simply resolves to nothing.
+     */
+    fun compactModelEntryId(): String = cachedCompactModelEntryId
     /** Max daily-log lines injected into the system prompt. */
     fun memoryInjectLines(): Int = cachedMemoryInjectLines
     /** Max rollup bytes injected into the system prompt, in KB. */
@@ -529,6 +544,7 @@ object AgentRuntimeLimitsPrefs {
         // [feat/chat-tuning-panel-b] Group 5 + 6.
         autoCompactMinTailTokens: Int? = null,
         autoCompactMinIntervalMin: Int? = null,
+        compactModelEntryId: String? = null,
         memoryInjectLines: Int? = null,
         memoryRollupInjectKb: Int? = null,
         memorySearchLines: Int? = null,
@@ -612,6 +628,13 @@ object AgentRuntimeLimitsPrefs {
         autoCompactMinIntervalMin?.let {
             cachedCompactIntervalMin = it.coerceIn(COMPACT_INTERVAL_MIN_MIN, COMPACT_INTERVAL_MAX_MIN)
             e.putInt(KEY_AUTO_COMPACT_MIN_INTERVAL_MIN, cachedCompactIntervalMin)
+        }
+        // [feat/compact-model-pin-1005] Null = untouched (other groups still
+        // save); "" = explicit reset to follow-the-session. Trim guards
+        // against picker whitespace; blank normalizes to "".
+        compactModelEntryId?.let {
+            cachedCompactModelEntryId = it.trim()
+            e.putString(KEY_COMPACT_MODEL_ENTRY_ID, cachedCompactModelEntryId)
         }
         memoryInjectLines?.let {
             cachedMemoryInjectLines = it.coerceIn(MEMORY_INJECT_LINES_MIN, MEMORY_INJECT_LINES_MAX)

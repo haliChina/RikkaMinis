@@ -1506,6 +1506,13 @@
     <string name="runtime_limits_compact_tail_desc">자동 압축은 이 수치 미만으로 꼬리 토큰을 자르지 않습니다 — 최신 대화는 그대로 유지됩니다. 기본 8000.</string>
     <string name="runtime_limits_compact_interval">자동 압축 간격(분)</string>
     <string name="runtime_limits_compact_interval_desc">같은 대화에서 자동 압축 사이의 최소 분 간격. 기본 5.</string>
+    <string name="runtime_limits_compact_model">압축 모델</string>
+    <string name="runtime_limits_compact_model_desc">자동 압축 시 가장 먼저 시도할 모델입니다. 나머지 체인은 세션을 따릅니다.</string>
+    <string name="runtime_limits_compact_model_follow">세션 따르기</string>
+    <string name="runtime_limits_compact_model_follow_desc">세션 자체 모델 체인 사용</string>
+    <string name="runtime_limits_compact_model_stale">사용 불가</string>
+    <string name="runtime_limits_compact_model_choose">선택…</string>
+    <string name="runtime_limits_compact_model_dialog_title">압축 모델 선택</string>
     <string name="runtime_limits_memory_inject">메모리: 주입 줄 수</string>
     <string name="runtime_limits_memory_inject_desc">시스템 프롬프트에 주입되는 최신 로그의 최대 줄 수. 기본 200.</string>
     <string name="runtime_limits_memory_rollup">메모리: 롤업 상한(KB)</string>

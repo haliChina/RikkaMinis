@@ -1508,6 +1508,13 @@
     <string name="runtime_limits_compact_tail_desc">自動壓縮不會砍掉低於此數量的尾部 token——最新對話保持原樣。預設 8000。</string>
     <string name="runtime_limits_compact_interval">自動壓縮間隔（分鐘）</string>
     <string name="runtime_limits_compact_interval_desc">同一會話兩次自動壓縮之間的最小分鐘數。預設 5。</string>
+    <string name="runtime_limits_compact_model">壓縮模型</string>
+    <string name="runtime_limits_compact_model_desc">自動壓縮時優先嘗試的模型，其餘候選照舊跟隨會話。</string>
+    <string name="runtime_limits_compact_model_follow">跟隨會話</string>
+    <string name="runtime_limits_compact_model_follow_desc">使用會話自身的模型鏈</string>
+    <string name="runtime_limits_compact_model_stale">已失效</string>
+    <string name="runtime_limits_compact_model_choose">選擇…</string>
+    <string name="runtime_limits_compact_model_dialog_title">選擇壓縮模型</string>
     <string name="runtime_limits_memory_inject">記憶：注入行數</string>
     <string name="runtime_limits_memory_inject_desc">注入系統提示詞的最新日誌行數上限。預設 200。</string>
     <string name="runtime_limits_memory_rollup">記憶：rollup 上限（KB）</string>

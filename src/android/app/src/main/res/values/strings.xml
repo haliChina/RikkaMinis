@@ -1604,6 +1604,13 @@
     <string name="runtime_limits_compact_tail_desc">Auto-compaction never cuts below this many tail tokens — the newest conversation stays verbatim. Default 8000.</string>
     <string name="runtime_limits_compact_interval">Auto-compact interval (min)</string>
     <string name="runtime_limits_compact_interval_desc">Minimum minutes between auto-compactions of the same conversation. Default 5.</string>
+    <string name="runtime_limits_compact_model">Compaction model</string>
+    <string name="runtime_limits_compact_model_desc">Model tried first when auto-compaction runs; the rest of the chain follows the session.</string>
+    <string name="runtime_limits_compact_model_follow">Follow session</string>
+    <string name="runtime_limits_compact_model_follow_desc">Use the session’s own model chain</string>
+    <string name="runtime_limits_compact_model_stale">unavailable</string>
+    <string name="runtime_limits_compact_model_choose">Choose…</string>
+    <string name="runtime_limits_compact_model_dialog_title">Choose compaction model</string>
     <string name="runtime_limits_memory_inject">Memory: injection lines</string>
     <string name="runtime_limits_memory_inject_desc">Max daily-log lines injected into the system prompt. Default 200.</string>
     <string name="runtime_limits_memory_rollup">Memory: rollup ceiling (KB)</string>

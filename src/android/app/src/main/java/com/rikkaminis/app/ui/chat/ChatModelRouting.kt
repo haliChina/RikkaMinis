@@ -14,6 +14,70 @@ import kotlinx.coroutines.launch
 // [FE-5 batch 7] Model selection / routing cluster extracted verbatim from
 // ChatViewModel as extension functions (same pattern as ChatPromptAndTools).
 
+/**
+ * [feat/compact-model-pin-1005] Prepend the user-pinned compaction model
+ * (Settings → Runtime Limits → 压缩模型) to the compaction attempt chain as
+ * head, dropping any duplicate — when the pin IS the active member or a
+ * group fallback, the chain it would have produced is kept unchanged
+ * (prepend-then-dedup: the pinned occurrence is the one that survives, but
+ * positions relative to the rest are identical because a duplicate removed
+ * from the tail re-tightens onto the pinned head slot).
+ *
+ * Pure ordering; budgets, the 120s chain deadline, the truncation guard and
+ * the "compaction results are never recorded into the group router" rule
+ * all live at the call site unchanged. A null/blank pin or an unknown
+ * entryId yields the input chain unchanged (stale pins degrade silently to
+ * follow-the-session; the Settings row shows the ⚠ stale label).
+ *
+ * The pin rides the FRONT of the chain regardless of its
+ * declaresNoEffortTiers value: the user picked this model deliberately, and
+ * per-candidate budgets already give cannot-silence members 60s — the pin
+ * only changes WHO is tried first, never the failure semantics.
+ *
+ * Top-level (not a ChatViewModel extension) so JVM tests call it without
+ * instantiating the VM — same pattern as [ordersCompactionCandidates].
+ *
+ * ponytail: pin 只重排不建拓扑（解析复用组内候选或全局 entry 过滤，不新建
+ * 健康视图/组） | 天花板: pin 指向的成员如果被 GroupRouter 冷却/熔断，它
+ * 照样被过滤掉（用户钉住≠绕过健康策略——刻意） | 升级触发: 用户报告"我钉的
+ * 模型冷却期间压缩总是落到旧链"且希望冷却期跳过而非换链时，再谈 pin 专属
+ * 冷却旁路
+ */
+internal fun prependCompactionPin(
+    pinEntryId: String?,
+    activeEntryId: String?,
+    active: LLMProvider,
+    fallbacks: List<FallbackCandidate>,
+    resolvePin: (String) -> LLMProvider? = { null },
+): List<Pair<LLMProvider, String?>> {
+    val id = pinEntryId?.trim().orEmpty()
+    if (id.isEmpty()) return ordersCompactionCandidates(active, fallbacks)
+    if (id == activeEntryId) {
+        // Pin IS the active member: honor the pin by leading the chain with
+        // the active slot, deduped from the reordered remainder — the user's
+        // explicit pick outranks the quiet-first demotion the catalog would
+        // apply (pin = local override, not a re-derivation).
+        val base = ordersCompactionCandidates(active, fallbacks)
+        val head = base.firstOrNull { it.second == null } ?: return base
+        return listOf(head) + base.filter { it !== head }
+    }
+    val pinned = fallbacks.firstOrNull { it.entryId == id }
+    if (pinned != null) {
+        val rest = ordersCompactionCandidates(
+            active,
+            fallbacks.filterNot { it.entryId == id },
+        )
+        return listOf(pinned.provider to id) + rest
+    }
+    // Pin is outside the session's group (or the session is in direct-entry
+    // mode): resolve it globally — same enable/credential filters as
+    // [buildFallbackProviders], via the injected resolver. This is what
+    // makes the pin work in BOTH modes (group members AND a model picked
+    // straight from a provider).
+    val resolved = resolvePin(id) ?: return ordersCompactionCandidates(active, fallbacks)
+    return listOf(resolved to id) + ordersCompactionCandidates(active, fallbacks)
+}
+
 fun ChatViewModel.selectGroup(groupId: String) {
     _selectedGroupId.value = groupId
     _selectedGroupName.value = providerRepository.group(groupId)?.name ?: ""
