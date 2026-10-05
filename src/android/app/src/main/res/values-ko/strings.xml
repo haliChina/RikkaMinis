@@ -1511,7 +1511,6 @@
     <string name="runtime_limits_compact_model_follow">세션 따르기</string>
     <string name="runtime_limits_compact_model_follow_desc">세션 자체 모델 체인 사용</string>
     <string name="runtime_limits_compact_model_stale">사용 불가</string>
-    <string name="runtime_limits_compact_model_choose">선택…</string>
     <string name="runtime_limits_compact_model_dialog_title">압축 모델 선택</string>
     <string name="runtime_limits_memory_inject">메모리: 주입 줄 수</string>
     <string name="runtime_limits_memory_inject_desc">시스템 프롬프트에 주입되는 최신 로그의 최대 줄 수. 기본 200.</string>
@@ -1630,7 +1629,6 @@
     <string name="scheduled_identity_footer">작업은 새로운 독립 세션에서 실행되며 현재 채팅에 영향을 주지 않습니다.</string>
     <string name="scheduled_field_title">제목(선택)</string>
     <string name="scheduled_field_prompt">작업 프롬프트</string>
-    <string name="scheduled_prompt_placeholder">예: GitHub 알림을 모아 요약하기</string>
     <string name="scheduled_section_window">일일 창</string>
     <string name="scheduled_window_footer">24시간제 HH:MM, 시작이 종료보다 앞서야 합니다. 창 내 첫 확인 시 하루 1회 실행됩니다.</string>
     <string name="scheduled_field_window_start">시작</string>

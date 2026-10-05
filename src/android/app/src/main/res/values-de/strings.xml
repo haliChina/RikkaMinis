@@ -1512,7 +1512,6 @@
     <string name="runtime_limits_compact_model_follow">Sitzung folgen</string>
     <string name="runtime_limits_compact_model_follow_desc">Eigene Modellkette der Sitzung verwenden</string>
     <string name="runtime_limits_compact_model_stale">nicht verfügbar</string>
-    <string name="runtime_limits_compact_model_choose">Auswählen…</string>
     <string name="runtime_limits_compact_model_dialog_title">Kompaktionsmodell wählen</string>
     <string name="runtime_limits_memory_inject">Speicher: injizierte Zeilen</string>
     <string name="runtime_limits_memory_inject_desc">Maximale Tageslog-Zeilen im System-Prompt. Standard 200.</string>
@@ -1631,7 +1630,6 @@
     <string name="scheduled_identity_footer">Die Aufgabe läuft in einer eigenen, neu erstellten Sitzung und berührt den aktuellen Chat nicht.</string>
     <string name="scheduled_field_title">Titel (optional)</string>
     <string name="scheduled_field_prompt">Aufgaben-Prompt</string>
-    <string name="scheduled_prompt_placeholder">z. B. Meine GitHub-Benachrichtigungen zusammenfassen</string>
     <string name="scheduled_section_window">Tagesfenster</string>
     <string name="scheduled_window_footer">24-Stunden-Format HH:MM, Beginn vor Ende. Die Aufgabe läuft bei der ersten Prüfung im Fenster, einmal pro Tag.</string>
     <string name="scheduled_field_window_start">Beginn</string>
