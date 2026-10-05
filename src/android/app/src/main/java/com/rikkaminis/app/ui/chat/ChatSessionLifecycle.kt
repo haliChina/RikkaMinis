@@ -9,6 +9,7 @@ import com.rikkaminis.app.data.db.MessageEntity
 import com.rikkaminis.app.data.model.AgentContentPart
 import com.rikkaminis.app.data.model.LLMMessage
 import com.rikkaminis.app.data.model.LLMModel
+import com.rikkaminis.app.data.model.LLMResponse
 import com.rikkaminis.app.data.model.ThinkingLevel
 import com.rikkaminis.app.data.model.RoutingStrategy
 import com.rikkaminis.app.diagnostics.SessionIdAliases
@@ -973,7 +974,11 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
                 AppLogger.info(
                     ChatViewModel.TAG,
                     "[Compact] summary ${if (entryId != null) "fallback " else ""}SUCCESS " +
-                        "candidate=${index + 1}/${chain.size} ($label ${candidate.model.displayName}) in ${ms}ms",
+                        "candidate=${index + 1}/${chain.size} ($label ${candidate.model.displayName}) in ${ms}ms" +
+                        // [fix/compact-telemetry-superseded-1005] horizon telemetry on
+                        // the same INFO line (SUCCESS is low-frequency): summary
+                        // length + model-reported output tokens, usage-null-safe.
+                        compactSummaryTelemetrySuffix(r.response),
                 )
                 return r.response.text
             }
@@ -1047,6 +1052,29 @@ internal fun compactSummaryIsTruncated(stopReason: String?): Boolean =
  */
 internal fun compactSummaryTruncatedFailure(modelDisplayName: String): IllegalStateException =
     IllegalStateException("compaction summary truncated (stopReason=length) on $modelDisplayName")
+
+/**
+ * [fix/compact-telemetry-superseded-1005] Telemetry segment appended to the
+ * SUCCESS log line: the adopted summary's character count plus the
+ * model-reported output tokens, so "how far into the summary horizon is this
+ * conversation" (compact-exp-1004 D-hold: the compactor hit the 4096 output
+ * cap six times in a row before the truncation guard existed; E: low-density
+ * material saturates ~2.1k tok) becomes a log reading instead of a surprise.
+ * usage is null on channels that don't report it — the outTok segment is
+ * omitted then, never logged as a placeholder 0 (absent reads as "unknown",
+ * 0 would read as "empty"). Pure function over [LLMResponse], JVM-testable
+ * like the guard helpers above; the leading space keeps
+ * `in ${ms}ms chars=…` single-spaced at the call site.
+ */
+internal fun compactSummaryTelemetrySuffix(response: LLMResponse): String =
+    buildString {
+        append(" chars=")
+        append(response.text.length)
+        response.usage?.let { usage ->
+            append(" outTok=")
+            append(usage.outputTokens)
+        }
+    }
 
 internal fun ChatViewModel.loadSession() {
     // T-android-crash-detected-halt: when CrashFrequencyDetector
