@@ -1536,7 +1536,6 @@
     <string name="runtime_limits_compact_model_follow">跟随会话</string>
     <string name="runtime_limits_compact_model_follow_desc">使用会话自身的模型链</string>
     <string name="runtime_limits_compact_model_stale">已失效</string>
-    <string name="runtime_limits_compact_model_choose">选择…</string>
     <string name="runtime_limits_compact_model_dialog_title">选择压缩模型</string>
     <string name="runtime_limits_memory_inject">记忆：注入行数</string>
     <string name="runtime_limits_memory_inject_desc">注入系统提示词的最新日志行数上限。默认 200。</string>
@@ -1654,7 +1653,6 @@
     <string name="scheduled_identity_footer">任务在新建的独立会话中执行，不影响当前聊天。</string>
     <string name="scheduled_field_title">标题（可选）</string>
     <string name="scheduled_field_prompt">任务提示词</string>
-    <string name="scheduled_prompt_placeholder">例如：汇总我在 GitHub 的通知并生成一份摘要</string>
     <string name="scheduled_section_window">每日窗口</string>
     <string name="scheduled_window_footer">24 小时制 HH:MM，开始需早于结束。任务只在窗口内的首次检查时运行，每天至多一次。</string>
     <string name="scheduled_field_window_start">开始</string>

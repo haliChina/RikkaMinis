@@ -150,7 +150,6 @@ fun ScheduledTaskEditScreen(
                 SectionTextField(
                     value = prompt,
                     onValueChange = { prompt = it },
-                    placeholder = stringResource(R.string.scheduled_prompt_placeholder),
                     singleLine = false,
                     isError = prompt.isBlank(),
                 )

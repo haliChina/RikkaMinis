@@ -1511,7 +1511,6 @@
     <string name="runtime_limits_compact_model_follow">セッションに従う</string>
     <string name="runtime_limits_compact_model_follow_desc">セッション自身のモデルチェーンを使用</string>
     <string name="runtime_limits_compact_model_stale">無効</string>
-    <string name="runtime_limits_compact_model_choose">選択…</string>
     <string name="runtime_limits_compact_model_dialog_title">圧縮モデルを選択</string>
     <string name="runtime_limits_memory_inject">メモリ：注入行数</string>
     <string name="runtime_limits_memory_inject_desc">システムプロンプトに注入する最新ログの最大行数。既定 200。</string>
@@ -1629,7 +1628,6 @@
     <string name="scheduled_identity_footer">タスクは新しい独立セッションで実行され、現在のチャットには影響しません。</string>
     <string name="scheduled_field_title">タイトル（任意）</string>
     <string name="scheduled_field_prompt">タスクプロンプト</string>
-    <string name="scheduled_prompt_placeholder">例: GitHub の通知をまとめて要約する</string>
     <string name="scheduled_section_window">日次ウィンドウ</string>
     <string name="scheduled_window_footer">24 時間制の HH:MM、開始は終了より前。ウィンドウ内の最初のチェック時に 1 日 1 回実行します。</string>
     <string name="scheduled_field_window_start">開始</string>

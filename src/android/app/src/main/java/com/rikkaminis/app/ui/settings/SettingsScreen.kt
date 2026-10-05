@@ -222,6 +222,19 @@ fun SettingsScreen(
                     onClick = onEnvVarsClick,
                     showDivider = true,
                 )
+                // [feat/scheduled-tasks-l0] Scheduled tasks list — Settings
+                // → Agent Runtime. Disabled by factory default (§5.4): the
+                // page itself carries the master switch.
+                // [ui/polish-1006] Placed between Env Vars and Runtime Limits
+                // (was: after Runtime Limits).
+                SettingsItem(
+                    icon = Icons.Outlined.Schedule,
+                    iconColor = Color(0xFF30B0C7),
+                    title = stringResource(R.string.scheduled_tasks_entry),
+                    subtitle = stringResource(R.string.scheduled_tasks_entry_subtitle),
+                    onClick = onScheduledTasksClick,
+                    showDivider = true,
+                )
                 // [T-subagent-toggle] Cross-session sub-agent dispatch switch.
                 // OFF by default (side-effectful: lets the agent open new sessions
                 // and run long-lived work). Direct inline switch (no sub-page) —
@@ -237,17 +250,6 @@ fun SettingsScreen(
                     title = stringResource(R.string.runtime_limits_entry),
                     subtitle = stringResource(R.string.runtime_limits_entry_subtitle),
                     onClick = onRuntimeLimitsClick,
-                    showDivider = true,
-                )
-                // [feat/scheduled-tasks-l0] Scheduled tasks list — Settings
-                // → Agent Runtime. Disabled by factory default (§5.4): the
-                // page itself carries the master switch.
-                SettingsItem(
-                    icon = Icons.Outlined.Schedule,
-                    iconColor = Color(0xFF30B0C7),
-                    title = stringResource(R.string.scheduled_tasks_entry),
-                    subtitle = stringResource(R.string.scheduled_tasks_entry_subtitle),
-                    onClick = onScheduledTasksClick,
                     showDivider = false,
                 )
             }

@@ -1609,7 +1609,6 @@
     <string name="runtime_limits_compact_model_follow">Follow session</string>
     <string name="runtime_limits_compact_model_follow_desc">Use the session’s own model chain</string>
     <string name="runtime_limits_compact_model_stale">unavailable</string>
-    <string name="runtime_limits_compact_model_choose">Choose…</string>
     <string name="runtime_limits_compact_model_dialog_title">Choose compaction model</string>
     <string name="runtime_limits_memory_inject">Memory: injection lines</string>
     <string name="runtime_limits_memory_inject_desc">Max daily-log lines injected into the system prompt. Default 200.</string>
@@ -1730,7 +1729,6 @@
     <string name="scheduled_identity_footer">The task runs in its own freshly created session and never touches the current chat.</string>
     <string name="scheduled_field_title">Title (optional)</string>
     <string name="scheduled_field_prompt">Task prompt</string>
-    <string name="scheduled_prompt_placeholder">e.g. Summarize my GitHub notifications</string>
     <string name="scheduled_section_window">Daily window</string>
     <string name="scheduled_window_footer">24-hour HH:MM, start before end. The task runs on the first check inside the window, once per day.</string>
     <string name="scheduled_field_window_start">Start</string>
