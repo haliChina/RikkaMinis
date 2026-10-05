@@ -49,6 +49,8 @@ import com.rikkaminis.app.ui.chat.buildConversationTextForSummary
 import com.rikkaminis.app.ui.chat.buildFallbackProviders
 import com.rikkaminis.app.ui.chat.compactBudgetTailKeepTokens
 import com.rikkaminis.app.ui.chat.isContextTooLargeError
+import com.rikkaminis.app.ui.chat.isPersistedUserPrompt
+import com.rikkaminis.app.ui.chat.isToolResultOnly
 import com.rikkaminis.app.ui.chat.neutralizeCompactArtifacts
 import com.rikkaminis.app.ui.chat.ordersCompactionCandidates
 import com.rikkaminis.app.ui.chat.resolveBudgetAnchorIdx
