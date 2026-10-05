@@ -914,8 +914,12 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
     // compact then burned 82s per halving round with the user's chat queue
     // behind it. A summary does not need the active member's persona, so
     // members that cannot silence thinking go LAST; every attempt gets a
-    // 30s wall budget and the whole chain a 120s deadline (rationale on the
-    // ChatViewModel companion constants). withTimeoutOrNull swallows ONLY
+    // per-candidate wall budget — 30s, or 60s for the cannot-silence members
+    // ([fix/compact-truncation-guard-1005]) — and the whole chain a 120s
+    // deadline (rationale on the ChatViewModel companion constants). A
+    // success whose stopReason was cut at the output ceiling ("length")
+    // counts as a failure and tries the next candidate — a truncated
+    // summary must never replace the context. withTimeoutOrNull swallows ONLY
     // its own TimeoutCancellationException — a user cancel still propagates
     // (termination path unchanged) — and an exhausted chain throws
     // lastFailure exactly as before, so the splitter's halving retry is
@@ -925,9 +929,10 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
     var lastFailure: Exception = IllegalStateException("compaction failed")
     for ((index, step) in chain.withIndex()) {
         val (candidate, entryId) = step
-        val budgetMs = minOf(
-            ChatViewModel.COMPACT_SUMMARY_CANDIDATE_BUDGET_MS,
-            deadlineAt - SystemClock.elapsedRealtime(),
+        val budgetMs = compactionCandidateBudgetMs(
+            candidate.model.declaresNoEffortTiers,
+            SystemClock.elapsedRealtime(),
+            deadlineAt,
         )
         if (budgetMs <= 0) {
             lastFailure = IllegalStateException(
@@ -956,6 +961,15 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
         }
         when (r) {
             is ProviderExecutionGateway.SendResult.Success -> {
+                if (compactSummaryIsTruncated(r.response.stopReason)) {
+                    AppLogger.info(
+                        ChatViewModel.TAG,
+                        "[Compact] summary TRUNCATED on ${candidate.model.displayName} " +
+                            "candidate=${index + 1}/${chain.size} ($label) — trying next",
+                    )
+                    lastFailure = compactSummaryTruncatedFailure(candidate.model.displayName)
+                    continue
+                }
                 AppLogger.info(
                     ChatViewModel.TAG,
                     "[Compact] summary ${if (entryId != null) "fallback " else ""}SUCCESS " +
@@ -982,6 +996,57 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
     }
     throw lastFailure
 }
+
+/**
+ * [fix/compact-truncation-guard-1005] Per-candidate wall budget for the
+ * compaction summary chain: candidates the relay cannot silence
+ * ([LLMModel.declaresNoEffortTiers] == true) get the 60s budget, everything
+ * else the 30s quiet floor; both are clamped by the chain deadline so the
+ * whole operation never exceeds COMPACT_SUMMARY_TOTAL_BUDGET_MS. A spent
+ * deadline yields a non-positive budget and the caller's `budgetMs <= 0`
+ * branch ends the chain.
+ *
+ * Top-level (not a ChatViewModel extension) so JVM unit tests call it
+ * without instantiating the VM — same pattern as [ordersCompactionCandidates]
+ * (the companion consts it reads are compile-time inlined, no Android
+ * classes are loaded).
+ */
+internal fun compactionCandidateBudgetMs(
+    declaresNoEffortTiers: Boolean?,
+    nowMs: Long,
+    deadlineAt: Long,
+): Long {
+    val perCandidate = if (declaresNoEffortTiers == true) {
+        ChatViewModel.COMPACT_SUMMARY_NOISY_CANDIDATE_BUDGET_MS
+    } else {
+        ChatViewModel.COMPACT_SUMMARY_CANDIDATE_BUDGET_MS
+    }
+    return minOf(perCandidate, deadlineAt - nowMs)
+}
+
+/**
+ * [fix/compact-truncation-guard-1005] True when the summary response was cut
+ * at the output ceiling and must NOT be adopted. The provider passes
+ * `finish_reason` through verbatim; the output-ceiling probe over 8
+ * OpenAI-compatible relays (compact-exp-1004/capprobe) showed silent
+ * truncation arrives as the OpenAI spelling "length" (WorkBuddy), while
+ * relays that error out go through SendResult.RemoteFailure instead — so
+ * only that one spelling is intercepted. Null / "end_turn" / "stop" /
+ * unrecognised values pass (conservative: a channel's non-standard
+ * completion marker must never cost a good summary its candidacy).
+ * Deliberately narrower than [TruncatedToolCallPolicy.isTruncatedFinish],
+ * which guards a different contract (turn tool-calls) with a wider set.
+ */
+internal fun compactSummaryIsTruncated(stopReason: String?): Boolean =
+    stopReason?.trim()?.lowercase() == "length"
+
+/**
+ * [fix/compact-truncation-guard-1005] The failure recorded when a candidate's
+ * summary came back truncated — assigned to `lastFailure`, so an
+ * all-truncated chain throws the same shape the timeout/failure paths use.
+ */
+internal fun compactSummaryTruncatedFailure(modelDisplayName: String): IllegalStateException =
+    IllegalStateException("compaction summary truncated (stopReason=length) on $modelDisplayName")
 
 internal fun ChatViewModel.loadSession() {
     // T-android-crash-detected-halt: when CrashFrequencyDetector

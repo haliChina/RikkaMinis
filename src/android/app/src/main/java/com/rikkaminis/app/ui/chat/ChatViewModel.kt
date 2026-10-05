@@ -367,6 +367,19 @@ class ChatViewModel(
         // failures reported on members that succeed within 30-60s → raise
         // COMPACT_SUMMARY_CANDIDATE_BUDGET_MS or make it adaptive.
         internal const val COMPACT_SUMMARY_CANDIDATE_BUDGET_MS = 30_000L
+        // [fix/compact-truncation-guard-1005] Noisy-member adaptation of the
+        // per-candidate budget: a member that declares no effort tiers
+        // (declaresNoEffortTiers == true → ThinkingLevel.OFF has no wire
+        // form, the relay keeps thinking) can only deliver content after its
+        // untellable reasoning finishes — for it the 30s wall is a
+        // guaranteed loss (71s reasoning-only incident, error-snapshot-141020;
+        // real-device compacts 10-04 21:12 and 10-05 07:24 both burned the
+        // whole "TIMEOUT after 30001ms candidate=1/1 (active GLM-5.3-Flash)"
+        // while the same model returned in ~7s during a quiet window). 60s
+        // gives "think first, then write" a budget it can plausibly finish
+        // within; the 120s chain deadline still clamps every candidate, so an
+        // overrun just hands the remainder to the next one.
+        internal const val COMPACT_SUMMARY_NOISY_CANDIDATE_BUDGET_MS = 60_000L
         internal const val COMPACT_SUMMARY_FALLBACK_LIMIT = 3
         internal const val COMPACT_SUMMARY_TOTAL_BUDGET_MS = 120_000L
 
