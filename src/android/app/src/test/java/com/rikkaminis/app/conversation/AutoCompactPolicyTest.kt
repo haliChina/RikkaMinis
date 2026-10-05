@@ -215,4 +215,41 @@ class AutoCompactPolicyTest {
         assertTrue("must cover UUIDs", prompt.contains("uuids"))
         assertTrue("must forbid altering code snippets", prompt.contains("do not translate or alter code"))
     }
+
+    // ── SUPERSEDED VALUES clause (task-brief-1005-D §2.B) ─────────────────
+
+    @Test
+    fun `compact prompt carries the SUPERSEDED VALUES collapse clause`() {
+        // The horizon counter-measure: superseded intermediate values MAY
+        // collapse into their latest form, so high-identifier-density
+        // conversations stop growing the summary monotonically
+        // (compact-exp-1004 arm E). Lower-cased pin on the section header —
+        // any rewrite that drops the clause fails here.
+        val prompt = ContextCompactor.COMPACT_SUMMARY_SYSTEM_PROMPT.lowercase()
+        assertTrue("must contain the SUPERSEDED VALUES clause", prompt.contains("superseded values"))
+        assertTrue(
+            "clause must live in the MUST PRESERVE prompt (single source of truth)",
+            prompt.contains("must preserve") && prompt.indexOf("must preserve") < prompt.indexOf("superseded values"),
+        )
+    }
+
+    @Test
+    fun `SUPERSEDED clause keeps the verbatim final-value seatbelt`() {
+        // The safety belt that makes collapsing safe: the FINAL value of
+        // every identifier must still appear verbatim exactly once. Pinned
+        // as a co-occurrence so a later edit that keeps the clause header
+        // but deletes the belt still fails (task-brief-1005-D §3 B-2).
+        val prompt = ContextCompactor.COMPACT_SUMMARY_SYSTEM_PROMPT.lowercase()
+        val atFinal = prompt.indexOf("final value")
+        assertTrue("clause must state the FINAL value rule", atFinal >= 0)
+        // Search from atFinal: the MUST PRESERVE bullets already contain an
+        // earlier "copy verbatim", which is not the clause's own seatbelt.
+        val atVerbatim = prompt.indexOf("verbatim", atFinal)
+        assertTrue("clause must keep the verbatim seatbelt", atVerbatim >= 0)
+        // Co-occurrence within the clause paragraph, not just the file.
+        assertTrue(
+            "verbatim seatbelt must sit with the final-value rule",
+            (atVerbatim - atFinal).let { it >= 0 && it < 400 },
+        )
+    }
 }
