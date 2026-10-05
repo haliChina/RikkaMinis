@@ -2,6 +2,7 @@ package com.rikkaminis.app.ui.chat
 
 import com.rikkaminis.app.data.model.LLMResponse
 import com.rikkaminis.app.data.model.LLMUsage
+import com.rikkaminis.app.conversation.compactSummaryTelemetrySuffix
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -91,7 +92,7 @@ class CompactTelemetryTest {
     @Test
     fun `success line carries the telemetry suffix between guard and adoption`() {
         val lifecycle = readRepoFile(
-            "app/src/main/java/com/rikkaminis/app/ui/chat/ChatSessionLifecycle.kt",
+            "app/src/main/java/com/rikkaminis/app/conversation/CompactOrchestration.kt",
         )
         val successRegion = lifecycle
             .substringAfter("is ProviderExecutionGateway.SendResult.Success -> {")
