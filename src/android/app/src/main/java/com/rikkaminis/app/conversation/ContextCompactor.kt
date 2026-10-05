@@ -224,6 +224,8 @@ object ContextCompactor {
         - Important constraints, rules, or user preferences mentioned
         - Any tool calls and their results that affect current state
 
+        SUPERSEDED VALUES: when the same entity received multiple successive values over the conversation (a config changed, a path renamed, a counter re-reported), you MAY collapse the superseded intermediate values into their latest form instead of listing every historical value — but the FINAL value of every identifier, path, URL, number, and command outcome must appear verbatim exactly once. Never drop the latest value; never invent a value not present in the conversation. This does not apply to decisions, errors, or their resolutions — those stay.
+
         STRUCTURE:
         1. Start with a one-line description of what the conversation was about (use past tense — "User asked X, agent did Y", NOT "Goal: X").
         2. Then a concise narrative of what happened, preserving technical details.
