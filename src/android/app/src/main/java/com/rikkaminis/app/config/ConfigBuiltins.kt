@@ -315,6 +315,20 @@ internal object ConfigBuiltins {
             prefs = limits, key = L.KEY_AUTO_COMPACT_MIN_INTERVAL_MIN,
             defaultValue = L.COMPACT_INTERVAL_DEFAULT_MIN, minValue = L.COMPACT_INTERVAL_MIN_MIN, maxValue = L.COMPACT_INTERVAL_MAX_MIN,
         ))
+        // [feat/compact-model-pin-1005] Pinned compaction model entry id.
+        // "" = follow the session chain (default). Written by the Runtime
+        // Limits panel's model picker; registered here so the in-app backup
+        // carries it and minis-config can inspect it. Accepts any string —
+        // a stale/invalid id simply resolves to nothing at chain-build time
+        // and compaction falls back to the session chain.
+        r.register(PrefsStringField(
+            path = "runtime.compactModelEntryId",
+            displayName = "Auto-compact model entry id",
+            description = "Model entry pinned as the compaction-chain head. Empty = follow the session chain (default). Stale ids are skipped silently at chain build.",
+            prefs = limits, key = L.KEY_COMPACT_MODEL_ENTRY_ID,
+            defaultValue = L.COMPACT_MODEL_ENTRY_DEFAULT,
+            maxLength = 128,
+        ))
         r.register(PrefsIntField(
             path = "runtime.memoryInjectLines",
             displayName = "Memory: daily-log injection lines",

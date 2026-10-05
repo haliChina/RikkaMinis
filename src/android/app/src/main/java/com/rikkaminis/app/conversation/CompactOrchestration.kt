@@ -52,6 +52,7 @@ import com.rikkaminis.app.ui.chat.isContextTooLargeError
 import com.rikkaminis.app.ui.chat.isPersistedUserPrompt
 import com.rikkaminis.app.ui.chat.isToolResultOnly
 import com.rikkaminis.app.ui.chat.neutralizeCompactArtifacts
+import com.rikkaminis.app.ui.chat.prependCompactionPin
 import com.rikkaminis.app.ui.chat.ordersCompactionCandidates
 import com.rikkaminis.app.ui.chat.resolveBudgetAnchorIdx
 import com.rikkaminis.app.ui.chat.resolveCompactAnchorIdx
@@ -691,7 +692,46 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
     // (termination path unchanged) — and an exhausted chain throws
     // lastFailure exactly as before, so the splitter's halving retry is
     // untouched. See ordersCompactionCandidates for the ordering logic.
-    val chain = ordersCompactionCandidates(provider, buildFallbackProviders(provider))
+    // [feat/compact-model-pin-1005] The user-pinned compaction model
+    // (Settings → Runtime Limits → 压缩模型) rides the chain head. It works
+    // in BOTH selection modes: inside the current group (matched against
+    // buildFallbackProviders' filtered candidates) or outside it (direct
+    // global resolution — e.g. the session runs a group but the pin points
+    // at a provider-level entry, or the session runs a single model at all).
+    // Resolution applies the SAME filters as buildFallbackProviders (router
+    // health / enabled instance / stored key / provider construction) — the
+    // pin never bypasses a demoted member. The pin does NOT change budgets, deadline,
+    // truncation guard, or the no-health-writeback rule; it only reorders
+    // who is tried first. Unresolvable pin = silent follow-session (one
+    // INFO line), identical to the pre-pin chain.
+    val chain = run {
+        val pinId = AgentRuntimeLimitsPrefs.compactModelEntryId()
+        if (pinId.isBlank()) {
+            ordersCompactionCandidates(provider, buildFallbackProviders(provider))
+        } else {
+            val base = buildFallbackProviders(provider)
+            prependCompactionPin(
+                pinId,
+                _activeEntryId.value,
+                provider,
+                base,
+            ) { entryId -> resolveCompactionPinProvider(entryId) }
+                .also { pinned ->
+                    // The pin rides the head as the active slot (contract:
+                    // second == null) when it IS the active member — count
+                    // that as reached too, or a healthy pin on the session's
+                    // own model would log a false "not reachable".
+                    val found = pinId == _activeEntryId.value ||
+                        pinned.any { it.second == pinId }
+                    if (!found) {
+                        AppLogger.info(
+                            ChatViewModel.TAG,
+                            "[Compact] pinned model $pinId not reachable — following session chain",
+                        )
+                    }
+                }
+        }
+    }
     val deadlineAt = SystemClock.elapsedRealtime() + ChatViewModel.COMPACT_SUMMARY_TOTAL_BUDGET_MS
     var lastFailure: Exception = IllegalStateException("compaction failed")
     for ((index, step) in chain.withIndex()) {
@@ -766,6 +806,33 @@ internal suspend fun ChatViewModel.generateCompactSummary(conversationText: Stri
         }
     }
     throw lastFailure
+}
+
+/**
+ * [feat/compact-model-pin-1005] Global resolver for a pinned compaction
+ * model entry: config lookup + the SAME filters [buildFallbackProviders]
+ * applies (router health / enabled instance / stored API key /
+ * ProviderFactory success). Reads the router's health gate
+ * (groupRouter.isUsable) so a cooling (429) / circuit-open (5xx) / dead
+ * (401) member is never re-tried — the chain follows the session instead.
+ * Returns null for an unknown/stale/demoted/disabled/credential-less
+ * entry — the caller then logs one INFO line and follows the session
+ * chain. Never writes group health, never persists anything.
+ */
+internal fun ChatViewModel.resolveCompactionPinProvider(entryId: String): LLMProvider? {
+    val config = providerRepository.config.value
+    val entry = config.modelEntries.find { it.id == entryId } ?: return null
+    // Same health gate as buildFallbackProviders — never re-try a member
+    // the router just demoted; the pin only rides the head while healthy.
+    if (!groupRouter.isUsable(entryId)) return null
+    val instance = config.instances.find { it.id == entry.providerInstanceId } ?: return null
+    if (!instance.isEnabled) return null
+    val apiKey = providerRepository.loadApiKey(instance.id) ?: return null
+    return try {
+        ProviderFactory.create(instance, apiKey, entry.model, context)
+    } catch (_: Exception) {
+        null
+    }
 }
 
 /**
