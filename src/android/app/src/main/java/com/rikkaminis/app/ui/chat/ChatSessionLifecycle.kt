@@ -3,6 +3,10 @@ package com.rikkaminis.app.ui.chat
 import android.os.SystemClock
 import android.util.Log
 import com.rikkaminis.app.conversation.ContextCompactor
+import com.rikkaminis.app.conversation.appendPinnedSection
+import com.rikkaminis.app.conversation.extractPinnedUserMessages
+import com.rikkaminis.app.conversation.pinnedSectionInner
+import com.rikkaminis.app.conversation.stripPinnedSection
 import com.rikkaminis.app.data.AgentRuntimeLimitsPrefs
 import com.rikkaminis.app.data.db.CompactMarkerEntity
 import com.rikkaminis.app.data.db.MessageEntity
@@ -790,14 +794,25 @@ internal suspend fun ChatViewModel.generateCompactSummaryWithSplitting(
     previousSummary: String? = null,
     depth: Int = 0,
     ): String {
+    // [feat/compact-pin-v0-1005] Pin v0: user verbatim text never passes
+    // through a rewrite. Extraction + strip happen at the depth-0 entry
+    // (BEFORE any LLM call); the re-append happens at the one exit below
+    // (AFTER the LLM). At depth > 0 previousSummary is always null and the
+    // recursion passes no pin — the split/merge prompts never see one.
+    // previousSummary comes from the previous round's summary and may carry
+    // a `<pinned-user-messages>` block: strip it here, carry the payload,
+    // and re-merge it with this fold's user text at the exit.
+    val pinNew = if (depth == 0) extractPinnedUserMessages(messages) else emptyList()
+    val pinCarried = if (depth == 0) pinnedSectionInner(previousSummary) else null
+    val prevSummaryStripped = if (depth == 0) stripPinnedSection(previousSummary) else previousSummary
     val transcript = buildConversationTextForSummary(messages)
-    val conversationText = if (previousSummary.isNullOrBlank()) {
+    val conversationText = if (prevSummaryStripped.isNullOrBlank()) {
         transcript
     } else {
-        "Previous context summary:\n$previousSummary\n\n" +
+        "Previous context summary:\n$prevSummaryStripped\n\n" +
             "New conversation to merge:\n$transcript"
     }
-    return try {
+    val summary = try {
         generateCompactSummary(conversationText)
     } catch (e: CancellationException) {
         throw e
@@ -831,6 +846,14 @@ internal suspend fun ChatViewModel.generateCompactSummaryWithSplitting(
             append("Part 2:\n").append(summary2)
         }
         generateCompactSummary(mergeInput)
+    }
+    // [feat/compact-pin-v0-1005] Re-append AFTER the LLM — the pinned user
+    // verbatim text never passes through a rewrite. Empty pin + no carried
+    // block → today's behavior, byte-identical.
+    return if (pinNew.isEmpty() && pinCarried == null) {
+        summary
+    } else {
+        appendPinnedSection(summary, pinNew, pinCarried)
     }
 }
 
