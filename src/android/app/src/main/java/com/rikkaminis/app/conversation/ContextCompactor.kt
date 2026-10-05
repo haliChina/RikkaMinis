@@ -158,7 +158,8 @@ object ContextCompactor {
         // 尾门，字段行为不受该取舍影响）。
         if (estimatedTokens >= contextWindow) {
             return if (!rescueAttempted) Decision.RESCUE else Decision.EXHAUSTED
-        }        // 单一事实源：压缩线只由 ContextPolicy 定义。
+        }
+        // 单一事实源：压缩线只由 ContextPolicy 定义。
         // [T-ctx-offload-escalation] 唯一例外：这一轮的 offload 已证明削不动
         // （候选池耗尽，缺口是 offload 结构上够不到的对话文本），调用方显式
         // 要求升级——否则上下文会卡在 offload 线与压缩线之间的死区里空转，
@@ -248,7 +249,8 @@ object ContextCompactor {
      * 从 ChatViewModel.compactSummarySystemPrompt 原样提取，行为零变化；提到
      * 这里是为了：(1) 单测锁定“路径/URL/UUID 原文保留”指令存在（T5 验收 4）；
      * (2) 自动/手动压缩共用同一提示词，不漂移。
-     */    val COMPACT_SUMMARY_SYSTEM_PROMPT: String = """
+     */
+    val COMPACT_SUMMARY_SYSTEM_PROMPT: String = """
         You are a context compaction engine. Your summary will REPLACE the original messages in the conversation context window. The agent will read your summary as past context, then proceed based on the user's NEXT message — your summary is background, not a standing work order. Write the summary in the same language the user used in the conversation.
 
         MUST PRESERVE (never omit or shorten):
