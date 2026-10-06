@@ -43,11 +43,11 @@ package com.rikkaminis.app.backup
  *                                     memberEntryIds 由 RikkaMinis 经 _entryIds 重映射）
  *   envVars[]                      ← data/env_vars.json（元数据）
  *                                     + secrets.json 的 envVars（base64 值解码为明文）
- *   skills[]                       ← skills/<id>/**（files.index.jsonl 索引 +
+ *   skills[]                       ← skills/<id>/…（files.index.jsonl 索引 +
  *                                     blobs/<sha256> 内容）重打包为单技能 ZIP
  *                                     （SKILL.md 位于 zip 根，符合
  *                                     SkillRepository.importFromArchive 的查找规则）
- *   memoryFiles[]                  ← data/memory/**（嵌套路径以 "__" 拍平——
+ *   memoryFiles[]                  ← data/memory/…（嵌套路径以 "__" 拍平——
  *                                     RikkaMinis 的 memory 导入拒绝含 '/' 的名字）
  *   mcpServers[]                   ← data/mcp_servers.json（同为 {"mcpServers":{…}}
  *                                     形态）拆成逐服务器包装
@@ -58,8 +58,8 @@ package com.rikkaminis.app.backup
  *                                     parts 数组序列化为 partsJson 字符串；ISO→毫秒
  *
  * 刻意不迁移（两边无对应物，见 DIFF_ANALYSIS）：
- *   CompactMarker/Folder/SubAgent JSONL、chats/<sid>/** 的会话文件树、
- *   shared_files/**、voice_corrections、OpenMinis 的 ConfigRegistry 级标量设置。
+ *   CompactMarker/Folder/SubAgent JSONL、chats/<sid>/… 的会话文件树、
+ *   shared_files/…、voice_corrections、OpenMinis 的 ConfigRegistry 级标量设置。
  *
  * 加密包支持（minisbak-enc/1，对照 BackupCrypto.kt）：
  *   KEK = PBKDF2-HMAC-SHA256(口令, salt, iterations=600k)
@@ -665,7 +665,7 @@ object OpenMinisBackupCompat {
         if (!root.isDirectory) return out
         root.walkTopDown().filter { it.isFile }.forEach { f ->
             // 加密包会给每个成员追加 .enc 后缀（BackupCrypto/BackupExporter
-            // 的就地加密遍历覆盖 data/** 全树）。这里的 f.length() 是密文
+            // 的就地加密遍历覆盖 data/… 全树）。这里的 f.length() 是密文
             // 尺寸（≈明文+段头+tag），作上限预检足够精确。
             if (f.length() > MAX_MEMORY_FILE_BYTES + 4096) {
                 notes.add("memory \"${f.relativeTo(root).path}\"：超过上限跳过")
