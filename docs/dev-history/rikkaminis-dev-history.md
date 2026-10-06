@@ -1,11 +1,11 @@
-# RikkaMinis 开发日志合并导出（2026-08-03 ～ 2026-10-04）
+# RikkaMinis 开发日志合并导出（2026-08-03 ～ 2026-10-06）
 
 > 📌 **注意**：本文件是 raw dump（归档快照，按时间正序排列）。
 > 按天索引见 **rikkaminis-dev-history-INDEX.md**，精炼时间线见 **RikkaMinis-开发时间线全记录.md**。
 
-- 合并范围：2026-08-03 ～ 2026-10-04，共 63 天
-- 条目总数：1534（按时间戳正序排序，已剔除与 RikkaMinis 应用开发无关的条目）
-- 总字符数：2026348 / 总行数：28323
+- 合并范围：2026-08-03 ～ 2026-10-06，共 65 天
+- 条目总数：1546（按时间戳正序排序，已剔除与 RikkaMinis 应用开发无关的条目）
+- 总字符数：2043144 / 总行数：28467
 
 ---
 
@@ -27028,24 +27028,6 @@ arm-b 唯一错项 T2（选「先不动，另开一轮」而非「先查全部�
 **教训落地**：覆盖式部署前，先 dump 目标 worker 的 `versions/{当前 vid}` 的 `resources.bindings` 做快照；部署后 diff 快照。装置成本 30 秒，比事后排查便宜得多。
 
 <!-- 2026-09-30 12:31:39 -->
-## ClashPilot（ClashMetaForAndroid fork）全量修改验收（09-30 下午，四源取证）
-
-
-**范围**：`559594d`（上游基线）→ main `34aca49`，**65 文件 / +7167 −112**。报告：`/var/minis/shared/work/verify-final-0930/REPORT.md`（含 P2 全清单）。
-
-**四源证据（三源取二满足，实际四源）**：①CI：main 最新两次 run（Build APK #5 / Pre-Release #26 @ 34aca4982927）success；②**沙箱装置 217 断言全绿**（Tuning 87 / Engine 72 / Memory 42 / QualityGate 16）——**CI 不跑这些 harness**（`main()` 式，非 JUnit），所以装置是真正独立的第二源；③静态：接线 38 参数无死角 / i18n 90 键 × 全语言 0 缺失 / 括号 0 失衡 / 冲突标记 0 / 调试残留 0（4 处 println 是 harness）；④APK 验真：签名 `CN=ClashMetaFork`（正式键）、arsc 含 ClashPilot、dex 含 8 个新参数 prefs key。
-
-**结论：代码本体可封存**。安全面干净（FileProvider 用 `${applicationId}`、广播 exported=false + setPackage、secret 排除出备份、URL 严格校验、Keystore AES-GCM、无日志泄漏）；上游只加不改（非 cfoptimizer/brand 改动仅 12 处）。
-
-**两处 P1 文档漂移（封存前建议修，都在 README，用户可见）**：
-1. `README:43` 承诺**不存在的功能**「网络切换时自动扫描」—— 实际是 09-29 改成的**劣化自动补货**（`auto_heal_enabled`，触发 = 多数节点失联/变慢，与网络切换无关，代码无 network callback）。
-2. README **三处数字互斥**：`:54`「1s 超时、200 并发」/ `:121-122`「400 并发、候选上限 600、原始池 1200」 vs `:96-97` 参数表「900ms、500 并发、1200、2400」——实际值以后者为准。（`:121-122` 这处 09-30 早已发现未定夺，仍在 main 上。）
-
-**P2 登记要点（11 条，详见报告）**：①`recordMemory` 传 `allCandidates` 而非 `probed` → 被地区过滤的候选被记 `STAGE_FAIL`（默认配置下是有益副作用，改配置后有 14 天冷却迟滞）；②`update-dependencies.yaml` 仍 `ubuntu-latest`（同族未改全）；③`SOURCES_PER_RUN=4` 死常量 + 注释旧数字；④`lastRangeOk` 死字段（写死 true 无消费方）；⑤`lastRunAt` 文档说"完成时间"实为"发起时间"；⑥`hourBucket` 整数除法 `24/hourBuckets` 非整除时桶数≠设定；⑦连点"立即运行"无并发去重。
-
-**方法**：独立复核用 deepseek-v4-flash 跑了一轮 `CfProbe` + `Coordinator` 审查（5 条候选 → 我核验后**仅 1 条成立**=P2-①，其余是设计取舍）——**模型审查必须逐条复核，命中率约 20%**。
-
-<!-- 2026-09-30 12:31:39 -->
 ## ★ 沙箱怪癖：shell_execute 输出管道会吞掉「裸 null 行」（09-30 实证）
 
 
@@ -27072,23 +27054,6 @@ arm-b 唯一错项 T2（选「先不动，另开一轮」而非「先查全部�
 **CI**：非 main 分支必须手动 dispatch（`gh-actions-dispatch --workflow build-apk.yaml --ref docs/fix-readme-drift`）→ run **36669545348 / #6 completed success**，5.5 分钟；**local HEAD == remote head == CI head 三方逐字符一致**（`ad209a19d096b9f8b498de2087102bd5fab2086c`）。
 
 **停止节点到达，未合并 main**（合并权在用户）。封存清单待用户放行：① 合并 `docs/fix-readme-drift` → main；② 删远端已合并分支 `ci/fix-prerelease-publish`；③ P2 清单（11 条）入 backlog。
-
-<!-- 2026-09-30 12:56:17 -->
-## ★ 封存完成：ClashPilot（ClashMetaForAndroid fork）开发线收尾（09-30，main = 4cedebe）
-
-
-**用户指令链**：「以最高规格检查一遍 → 计划没问题就封存」→ 报告两处 P1 文档漂移 → 「修了吧」→ 「合并」。
-
-**执行结果**：
-- README 两处 P1 修复（4 处改动，纯文档）→ 分支 `docs/fix-readme-drift` @ ad209a1 → 分支 CI run 36669545348 success → **合并 main = `4cedebe878b80142c8605559d07952abd3502167`**（`--no-ff`，双父 34aca49 + ad209a1，合并树 vs 分支 tip 0 行差异）
-- main CI 双绿：#7 Build APK + #27 Build Pre-Release @ 4cedebe878b8 success
-- **pre-release `Prerelease-alpha` 已刷新，tag 指向 4cedebe878b8** ✓（6 assets）
-- **远端分支只剩 `main`**（`docs/fix-readme-drift` 204 / `ci/fix-prerelease-publish` 204）；本地分支也清理干净
-- P2 清单 **11 条入 backlog §43**（`/var/minis/shared/backlog.md`，每条带位置/影响/触发条件）
-
-**合并前核查三项（纯文档改动的适配版，全部有证据）**：①检查 = diff 全文仅 README.md、无夹带、调试残留/冲突标记计数 0；②验证 = local HEAD == remote head == CI head 三方逐字符一致；③核实（三源取二）= CI 绿 + **独立证据 = 常量实值核对**（`TCP_CONCURRENCY_DEFAULT=500`/`TCP_TIMEOUT_MS_DEFAULT=900`/`MAX_CANDIDATES_DEFAULT=1_200`/`RAW_POOL_FACTOR_DEFAULT=2`→2400/`MIN_INTERVAL_HOURS_DEFAULT=6` 逐条对上 README 新表述）。
-
-**产物**：验收报告 `shared/work/verify-final-0930/REPORT.md`（四源取证 + 完整 P2 清单 + 诚实边界）。
 
 <!-- 2026-09-30 13:42:17 -->
 ## OpenMinis 上游调研（09-30，用户「看看有什么能抄的」）
@@ -27977,292 +27942,7 @@ backlog 全文 1338 行逐条分类：**登记未修缺陷类 42 条，防御性
 - 可吸收判定：高价值=ChatScrollPolicy 单一权威模式（P2 登记，升级触发=下次跳屏回归）、memory poison-window 写入配额概念；种子级=recallCountBoost/archived 淡出借给 semantic_memory.py、TextReplacers 三级阶梯（P2）；不满足一阶门=jieba FTS（已有 HF embedding）、BashismDetector、ui_action（已有 a11y-cli）、rclone、本机构建。克隆在 /var/minis/shared/work/ultra-1002（depth 90）。
 - 方法论佐证：他也做 8-repo 审计→first-tier adoption（同我们 peer-issues 流程）；KDoc 带真机逐字对照证据；10-01 也 revert 过一次（instant-thinking placeholder 打翻流式）。
 
-<!-- 2026-10-02 23:55:46 -->
-## LEARN 边种子（方案 A）建成并验证 4/4（10-02，用户拍板「按你说的来」）
-
-
-**装置**：`/var/minis/shared/work/learn-edge-seed/`（rules_index.py + index.json 245 规则 + patterns.json + dates.json + cases.json + REPORT.md）。用法：`python3 rules_index.py {build|check "事故" [--as-of DATE]|replay cases.json}`。
-
-**三条实测发现（装置跑出来的）**：①`LEARNINGS.md` 18 条记录里 `Pattern-Key` 出现 **0 次**——self-improving 模板早就定义了连接轴，从没被填；②**纯词汇匹配在真家族上失效**：2-gram 覆盖率打分下五个用例全落「弱命中」且 top-1 选错（规则写「四层同步 模型/entity/toSnapshot/toProviderConfig」，事故写「worker IPC 跨进程序列化」= 同一件事两套词）→ pattern_key 是必需品不是锦上添花；③**规则日期被「日志事后引用」污染**：自动回溯把四处同步清单创建日误判为 09-23（那天日志引用过它），真值 08-06（当日日志原文「GLOBAL.md 已补充新经验教训（四处同步清单…）」）→ 需证据背书表 + 「无法证明当时存在 = 不算它存在」的保守过滤（回放时严格早于 `<`）。
-
-**回放 4/4**（同族五次复发，严格时点过滤）：08-06 → 知识问题（同日规则未存在）；09-05/09-06/09-07 → 「召回问题 + 覆盖不足 → 补 L5-worker-ipc，不要另写条目」。**价值实测**：09-05（第 2 次复发）工具就会说扩规则补 L5，现实是第 3 次复发（09-07）后才补 → 工具省 1 次复发。
-
-**生命周期实证**：同家族今天再查 → 「召回问题（规则已存在且覆盖）→ 修召回」（因 09-07 已把 L5 补进 four-way-sync-check v1.1.0）——判定随资产演化而改变 = 规则库第一次有新陈代谢。
-
-**天花板**：概念分类靠手写关键词（升级触发=家族内事故被判知识问题 ≥2 次）；规则日期靠日志回溯（升级触发=给 memory 建每日 git 快照）；回放天级粒度。刻意不做：向量检索、自动改写规则、定时扫描。
-
-**待拍板 3 步**：①把 check 接入 self-improving 触发流程（事故先查再决定写不写）；②回填 LEARNINGS 现存 18 条的 Pattern-Key；③方案 B（backlog 触发条件接 log-pattern/recur>=N/path-touch）。
-
 ## 2026-10-03
-
-<!-- 2026-10-03 00:01:47 -->
-## LEARN 边闭环：种子 + 接入 + 回填全部完成（10-02，用户拍板「按你说的推进」）
-
-
-**canonical 位置（单一来源，work 目录不留副本）**：`/var/minis/skills/self-improving-agent/scripts/rules_index.py` + `data/rules-index/{index.json,patterns.json,dates.json,cases.json}`。完成报告 `/var/minis/shared/work/learn-edge-seed/REPORT.md`（另存回填脚本 backfill_pattern_key.py）。
-
-**接入日常（SKILL.md 三处改动，description 未动故不强制行为版 evals，静态检查 OK/错误 0）**：①Current Final Rules 加「先查后写」；②Quick Reference 表首行加「疑似同族复发 → 先跑 check」；③新增节「复发回查（先查后写）」含三态判定表 + 命令 + 「Pattern-Key 是外键不是自由文本」+ 实测依据 + 天花板。
-
-**回填 18/18**：字段回填前 `Pattern-Key`/`Recurrence-Count`/`First-Seen`/`Last-Seen` 四项全为 0（模板定义半年从未使用）。家族分布：`skill.self-test`×4（3月自测噪音）、`cleanup.stale-reference-sweep`×2、`collab.verify-referent-before-acting`×2、`sandbox.gnu-vs-busybox-flag`×2（1 条在 LEARNINGS + grep --include 那条在 GLOBAL.md）、其余 8 条单例。**顺带发现**：旗舰家族 field.sync.missing-layer（5 次复发）不住 LEARNINGS 而住 GLOBAL.md + patterns.json → LEARNINGS.md 已漂移出「模式之家」位置，patterns.json 成为注册表（已写进 SKILL.md 新节）。内容完整性：diff 删除行 0（纯新增）。
-
-**验证**：回放 4/4（新家复跑仍绿）；同家族新事故→「召回问题（已覆盖）」；**新家族 busybox flag 也跑通**（证明设计不只对一个家族有效，需给 patterns.json 加无 layers 的模式——check/classify 两处都做了 `p.get('layers') or {}` 兜底，第一次漏改 classify 触发 KeyError，已修）；无关新事故→弱命中且 top-2 正是该域真规则。
-
-**坑（复发预防）**：①回填脚本按 `## [LRN-` 切块，循环从第一个条目开始 → **文件头（`# Learnings` + 空行）被丢掉**；发现方式是 `diff | grep -c '^<'` 非 0，修法 = 补前置行。凡「按条目切块重写」的脚本都要显式保留 preamble；②无 layers 的模式在 classify() 里也要兜底，不能只改 check()。
-
-**待拍板**：①GLOBAL.md 加一行「写新规则前先回查」（最强接线，GLOBAL 每会话注入）；②方案 B（backlog 触发条件机械化），建议等 1 跑出实战数据再做。
-
-<!-- 2026-10-03 00:06:00 -->
-## LEARN 边后续（方案 B + 天花板）已登记进 backlog §48 —— 防遗忘的发现链
-
-
-**用户明确担心「以后忘了」→ 已把后续工作登记进 canonical 待办册**：`/var/minis/shared/backlog.md` **§48**（`## §48 LEARN 边闭环：方案 B + 天花板升级触发`，1×P2 + 2×升级触发，含背景/已完成部分/触发条件/触发后方案/搁置时间）。scan_debt.py notes 通过（38 段 / no-触发条件 0 段 / exit 0）。
-
-**登记内容**：①**P2-1 方案 B**（backlog 触发条件的机械化评估器 triggers.py，3 类判据 log-pattern/recur>=N/path-touch；**触发条件 = 方案 A 实战 ≥3 次 check 调用，或出现「本可判召回问题却仍写新条目」≥1 次**；搁置理由=装置比例）；②**升级触发 1** 概念分类天花板（patterns.json 手写关键词漏检 → 家族内事故被判知识问题 ≥2 次 → 上语义检索）；③**升级触发 2** 规则日期天花板（日志回溯被事后引用污染 → 需要精确时间线时给 /var/minis/memory 建每日 git 快照）。
-
-**发现链（以后找它的三条路）**：①`grep -n '§48' /var/minis/shared/backlog.md`；②`python3 /var/minis/skills/change-ladder/scripts/scan_debt.py notes | grep LEARN`；③memory_get 搜「LEARN 边 / 方案 B / rules_index」。三层分工：**规则进 GLOBAL.md（复发回查纪律）、待办进 backlog §48、指针进日报**。
-
-**教训（用户点出的通用问题）**：报告文件（REPORT.md）与日报都不是「以后要做」的正确家——日报会被 rollup 蒸馏掉、报告藏在 work 目录没人翻。**任何「以后再说」的事必须落到 backlog.md 并带触发条件**，否则等于没记。本次正是因为用户追问才发现「方案 B 在 backlog 里 0 条记录」。
-
-<!-- 2026-10-03 00:07:52 -->
-## GLOBAL.md 新增「待办登记纪律（防遗忘）」第 21 节（10-02，用户拍板「现在就该升级了」）
-
-
-**位置**：GLOBAL.md 第 53 行，夹在「修复门纪律」（P 级怎么定，其出口已写 = backlog + 升级触发条件）与「改动阶梯纪律」之间——顺序即「怎么定级 → 定了往哪放 → 怎么动手」。GLOBAL 现 219 行 / 21 节。
-
-**内容三条**：①**报告文件与日报都不是「以后要做」的家**（日报被 rollup 蒸馏、报告藏在 work 目录没人翻）→ 任何「以后再说/攒着/待拍板」必须落 `/var/minis/shared/backlog.md`，带**触发条件 + 触发后方案 + 搁置理由**三件；缺触发条件 = 静默腐烂（`scan_debt.py notes` 标 no-触发条件 并 exit 1）。②**分层**：规则进 GLOBAL.md、待办进 backlog、指针进日报；落完回跑机械门确认新条目在扫描器输出可见。③**自检信号**：想说「这个先记着，以后再说」却没打算写 backlog = 要丢的前兆（实证：LEARN 边方案 B 曾只活在日报 + REPORT.md，backlog 0 条）。
-
-**与既有内容去重**：修复门纪律里「P2 出口 = backlog + 升级触发条件」讲的是 P2 去哪；新节把它推广到所有「以后再说」，并补上防遗忘的理据与自检信号，不重复 P 级定义。机械门复跑 38 段 / no-触发条件 0 段 / exit 0。
-
-<!-- 2026-10-03 00:26:17 -->
-## 遗忘层：设计已定稿并登记 §49，结论「停在等数据」（10-02，用户拍板）
-
-
-**用户确认**：「现如今最好停在这里，等数据」——即只保留 SENSE 边（`mem-budget`），DECIDE 及以下全部等 §48 方案 B 与容量触顶。**理解正确，但已堵一个坑**：快照得有人记，趋势不会自己长出来 → `mem-budget status` 改为**自带当日补记（幂等）**，任何一次查看都推进序列，不依赖谁记得跑 `record`。
-
-**设计结论（已写进 §49，触发后照此执行勿重新推导）**：
-- **遗忘不是删除，是「让它在需要时才出现」**。稀缺资源不是磁盘，是 ①push 层 token ②pull 层注意力。三种操作：**降级**（push→pull，价值最高、零信息损失）/ 压缩（rollup 已在做）/ 淘汰（只对已证明死亡的）。
-- **五条要点**：①免疫层优先于使用频率（安全/凭据/破坏性操作守卫/跨层完整性永不降级 = 不可遗忘清单，对应代码侧「永不砍清单」）；②容量上限是触发器不是时间；③**必须有升格路径**（归档被再次触发 → 升回活跃，否则 = 单向删除，系统越忘越蠢）；④降级硬判据只有三条（被取代/触发条件失效/被更一般规则吸收），「长期未引用」单独不足以降级（罕见但致命的规则特征恰是长期未引用）；⑤误留代价小、误删代价大 → 机械出候选、人拍板。
-- **五边闭环**：SENSE✅ → DECIDE（候选+人工）→ ACT（降级进 archive + 留指针）→ EFFECT（push 层真变小？还查得到？）→ LEARN（被降级后又触发 → 升格 = 判据过激的证据）。
-- **阶梯**：第 0 级不做 ← 除 SENSE 全停这；第 6 级容量哨兵 ✅；第 5 级 rules_index 加 usage log（等 §48）；第 4 级 免疫标记+归档区；第 3 级 候选脚本+拍板。
-- **原则**：记忆宽容（多记、别怕脏），**遗忘保守**（少删、可逆、免疫优先）。两者用同一套判据会出事。
-
-**首测改变紧迫感**：GLOBAL 220/300 = 73.3% · skills 28/40 = 70.0% · 日报 3.21/5.00 MB = 64.2%——三个 push 层都已在 70% 附近，不是「遥远的将来」。工具源 `shared/mem_budget.py`（装 `/usr/local/bin/mem-budget`，快照 `shared/memory-budget.tsv`，已进 README 资产表）。
-
-**找它的三条路**：①`mem-budget status`；②`grep -n '§49' /var/minis/shared/backlog.md`；③memory_get 搜「遗忘层 / §49 / mem-budget」。
-
-<!-- 2026-10-03 08:46:27 -->
-## WorkBuddy2API-Android 第一刀：粘性会话 + 排除名单 failover 完成（10-03，CI 绿停未合并）
-
-
-**对象**：***OWNER***/WorkBuddy2API-Android 分支 `feat/sticky-session-exclusion-failover` @ fcee1f8c（3 文件 +110/−15）。CI run 37083219954 completed success @ head_sha 逐字符一致，**停止节点已达，合并权在用户**。
-
-**改动**（吸收 sub2api 调度语义，吸收语义不吸收代码）：
-- `sticky_sessions` 表（DB v8→9，onUpgrade 无条件调 createSchema 建新表）：同一 session 30min 内钉住同一健康账号，防上游 prompt cache 因每请求加权随机换号全 miss
-- 会话哈希来源降序：`session_id`/`x-session-id` 头 → body `metadata.user_id` → 客户端 Key 前缀；落库存 SHA-256 短哈希（`stableHash` 顶层纯函数）不存原文
-- sticky **唯一写点在 proxy 成功返回后**（`recordStickySession`），记录的是实际使用的账号（与「换号后 account 指向实际使用账号」同一纪律）；selectAccount 只读 sticky；复用仍过 1.5s 限速判定（节流窗口内宁可换号不硬打）
-- 换号重试改排除名单语义（`excluded` set，对齐 sub2api SelectAccountForModelWithExclusions）：上限 1→2；预检改用 `selectAccount(markUsed=false, excluded)` 干跑（countHealthy 不带排除语义）；冷却兜底号也过排除名单
-- 接缝透传：`upstreamRequest`/`accountForRequest` 加 `sessionHash`/`excluded` 可选参数，其余 5 个调用点走默认值不动
-
-**验证口（装新包后）**：同一 session 连续 5 请求 → usage_logs 的 account_uid 收敛成一个；停用 1 账号 → 请求无感续跑；粘性命中后上游 cache token 上涨。
-
-**坑（复发预防）**：①file_edit 多行 old_string 含 `"""` 和实换行时匹配失败——精确文本先用 file_read/sed -n 看原文再改，不要从之前 shell 输出复制（格式可能有细微差）；②本轮误删了 NativeStore 类声明 2 行（old_string 比意图范围大）——**file_edit 前必须确认 new_string 完整覆盖 old_string 的每一行**，提交前 git diff 全量过一遍当场抓到恢复；③gh_sync.sh push 无 upstream 时只打提示不推——首次推分支直接 `git push --set-upstream`，askpass 走 GIT_ASKPASS 文件（token 经 /tmp 临时文件传递后立即删除）。
-
-**第二刀已设计未动手**：`upstreams` 表（platform/base_url/api_key_enc/failure_count/cooldown_until 池级冷却复刻）+ `Upstream` 接口（buildRequest/quota，WorkBuddy impl 搬 upstreamRequest 现成）+ 第一个 `openai_compat` 实现（覆盖 gcli2api/Groq/sub2api）+ 模型名命名空间路由（`@池名/model`，apps.region→upstream_id 挂点现成）+ 默认策略「免费链耗尽即报错不落付费」。
-
-<!-- 2026-10-03 08:57:12 -->
-## WorkBuddy2API-Android 第二刀：上游池 + 模型名路由完成（10-03，两刀 CI 全绿停，未合并）
-
-
-**分支** `feat/sticky-session-exclusion-failover` 现两个 commit：fcee1f8c（第一刀粘性+排除名单）+ b0eb791（第二刀上游池，6 文件 +392/−11）。CI run 37083219954 @ fcee1f8c 与 37083819800 @ b0eb791743 均 success，head_sha 与本地逐字符一致。**停止节点已达，合并权在用户；用户指示两刀一起真机验证。**
-
-**第二刀改动**：
-- `upstreams` 表（DB v10）：openai_compat 池，api_key_enc 复用 AES-GCM，failure_count/cooldown_until 复刻 accounts 同名（观测用，不阻断显式路由）
-- `routeModelName` 纯函数（NativeStore.kt 顶层）：`@池名/模型` → (池名, 剥前缀)；无前缀 → WorkBuddy 默认。路由在 `upstreamRequest` 内部分发，**失败交回上游错误不自动落 WorkBuddy**（让失败可见 = 省成本策略的默认开关）
-- `openaiCompatUpstreamRequest`：base_url + Bearer 透传（URL 兼容带/不带 /v1），RequestInspector 出网取证，合成账号 `account_uid=upstream:<池名>` 归因（前缀 upstream: 与真实 UID 永不冲突）
-- proxy 记账分叉：`currentUpstreamId` 跟踪 → 失败 markUpstreamFailure 不进 WorkBuddy 冷却；上游池**跳过提示词注入**（WorkBuddy 内容过滤对其他上游是行为污染）、跳过换号重试（单 key 无重选意义）、不写 sticky（合成 key 不在 accounts 候选里）
-- `/v1/models` 聚合上游池目录（@池名/ 前缀 + owned_by）
-- UI（AppsScreen）：「上游池」区段 + UpstreamEditorDialog（WindowDialog 全限定调用避免 import），createUpstream **同步执行**让对话框直接收到校验错误（task 异步模式收不到，AppEditorDialog 同款坑）
-
-**验证口（装机后一起验）**：①添加 gcli2api 池（base_url+key）→ `@池名/模型` 请求走它、usage 记 upstream:<池名>；②无前缀模型仍走 WorkBuddy 且 sticky 生效；③停用池 → 请求报「上游池已停用」；④/v1/models 含 @池名/ 条目；⑤粘性：同 session 连续请求 account_uid 收敛；⑥排除名单：停用 1 账号请求无感续跑。
-
-**坑（复发预防）**：①Miuix UI 新组件 API 签名必须先看现有用法（PcDialogs.kt 的 WindowDialog/TextField/TextButton 模式照抄），WindowDialog 用全限定 `top.yukonga.miuix.kmp.window.WindowDialog` 可省 import；②AppState 的 task() 异步模式返回值收不到（createApp 同款）——需要对话框内联报错的操作要同步执行；③upstreams 表无 requests 列，UI 别引用不存在的字段（optLong 缺键返 0 = 误导性零）。
-
-<!-- 2026-10-03 09:04:18 -->
-## WorkBuddy2API-Android：本地证据链补齐（10-03，harness @ d168092，CI 绿停）
-
-
-**分支** `feat/sticky-session-exclusion-failover` 三 commit：fcee1f8c（粘性+排除名单）+ b0eb791（上游池+路由）+ d168092（jvm/PureFnHarness.kt）。CI run 37084293576 success @ d16809267af 逐字符。**停止节点已达，等真机验证 + 用户合并拍板。**
-
-**JVM harness**（`jvm/PureFnHarness.kt`，真实源文件逐字抽取 + 字面量期望）：routeModelName 12 断言（正常前缀/无前缀/@无斜杠/空池名/嵌套斜杠/空串）+ stickySessionFresh 5（TTL 边界含闭/超一瞬/从未记录/负 updatedAt）+ stableHash 5（确定性/区分性/长度/纯十六进制/空串）。**基线 22/22；变异负控 A（`slash <= 1`→`< 1`）与 B（updatedAt 守卫删除）各精确 2 红钉在变异点**——装置灵敏度已验证。kotlinc 在 /opt/kotlinc/bin/（不在 PATH），java -cp out.jar PureFnHarnessKt 运行。
-
-**合并前三源取二现在有两条独立证据**：①JVM harness 22/22 + 变异负控；②CI 三 run 全绿 @ 逐字符 head_sha。第三条（真机）等装机验证——用户说两刀一起验。
-
-**登记不修**：/v1/models 上游池目录只用 models_json 配置项（不实时拉上游 /models）——升级触发 = 客户端需要完整模型目录而 models_json 不够用；跨池自动 failover（免费链耗尽落付费）刻意不做（显式路由默认，让失败可见）。
-
-**下一步（等用户）**：真机装 latest-build APK 过 6 条验证口 → 拍板合并。合并前核查三项已备：diff 全读无夹带（三 commit 均逐文件审过）、CI head_sha 逐字符、独立证据 = JVM harness。
-
-<!-- 2026-10-03 09:11:18 -->
-## WorkBuddy2API-Android 合并 main（10-03，用户放行「合并后安装包含所有改动方便验证」，merge 00c89bf）
-
-
-**合并**：--no-ff `00c89bf`（父 fdd6d2c + d168092），合并树 vs 分支 tip 树 SHA 逐字符一致（63947386==63947386），git diff --check 0，main 未漂移（merge-base=fdd6d2c）。远端 main == 本地逐字符（00c89bf93f），远端分支 DELETE 204（push main 确认之后才删），本地分支已删。
-
-**合并前核查三项全过**：①diff 7 文件 +586/−21 与三 commit 一致、冲突标记 0；②CI 三 run 全绿 @ 逐字符 head_sha（37083219954/37083819800/37084293576）+ 本地 JVM harness 22/22 + 变异负控 A/B 各 2 红钉变异点；③独立证据 = JVM harness（三源取二满足）。
-
-**main CI run 37084756262 success @ 00c89bf**（这次等了结论——用户装机验证靠它）；latest-build Release 资产已滚动更新：**WorkBuddy2API-00c89bf.apk 15.8MB @ 01:09Z，target main**——包含全部两刀改动。
-
-**真机验证口（装 00c89bf 包后）**：①应用页添加 gcli2api 池（base_url+key）→ `@池名/模型` 请求走它、记录页归因 `upstream:<池名>`；②无前缀模型仍走 WorkBuddy；③同 session 连续请求 account_uid 收敛（sticky）；④停用 1 账号请求无感续跑（排除名单）；⑤停用池 → 报「上游池已停用」；⑥GET /v1/models 含 @池名/ 条目；⑦长会话跑一段 → 上游 cache token 上涨、积分消耗下降。
-
-**DB 升级注意**：DATABASE_VERSION 8→10（sticky_sessions + upstreams 两表），onUpgrade 无条件调 createSchema（IF NOT EXISTS）建新表，老库升级自动带出。
-
-<!-- 2026-10-03 09:26:58 -->
-## 诊断（10-03，用户报 127.0.0.1:8788 用不了）：8788 = WorkBuddy2API 本地端口（c
-
-**诊断（10-03，用户报 127.0.0.1:8788 用不了）**：8788 = WorkBuddy2API 本地端口（com.joy4fire.workbuddy2api）。服务/key 全正常；故障 = 账号池冷却期「没有可用的国际版账号」（几分钟自愈）。可用诊断路径：`/health` 端点回 `{"status":"ok","account":"<uid>"}`；curl 必须 `--noproxy '*'`（壳里有 HTTP_PROXY，否则连本机也被劫持挂死）；`/proc/net/tcp` 在 PRoot 里为空不可用，对照法（随机端口秒拒绝 vs 目标端口秒连=真有监听）可判断端口存活。模型目录 24 个（auto/fast/balanced/primary/deep/gpt-5.x/gemini-3.x/kimi/glm/hy3 等）。gemini-2.5-flash 不在目录（上游报 model service info not found）。
-
-<!-- 2026-10-03 09:34:21 -->
-## WorkBuddy2API「拉不下来模型列表」根因（10-03，cgroup freezer 实锤）：服务/key/模型
-
-**WorkBuddy2API「拉不下来模型列表」根因（10-03，cgroup freezer 实锤）**：服务/key/模型目录全正常；根因 = HyperOS 冻结了 com.joy4fire.workbuddy2api 进程——`/sys/fs/cgroup/uid_11595/pid_27626/cgroup.freeze = 1`（Shizuku 可读）。冻结时 accept 循环停摆：TCP connect 秒通（内核 backlog 接了 SYN）但应用永不 accept/响应 → 客户端挂死/超时 0 字节。因果闭环：静置 90s 后两拉全挂 + 冻结态 curl 挂死 + 用户在 app 界面操作时（logcat MiuixHostActivity 活跃）请求全通。shell uid 无权写他人 cgroup.freeze，解冻只能靠打开 app/系统 unfreeze。**可复用判据**：「connect 秒通 + 0 字节挂死」+ freeze=1 = 冻结杀；解法 = HyperOS 省电策略无限制 + 锁定任务卡 + 悬浮窗保活（FloatingWindowKeeper）。诊断口诀：连本机 curl 必须 --noproxy（壳里 HTTP_PROXY 劫持 127.0.0.1）；对照法判端口存活（随机端口秒拒绝 vs 目标秒连）；PRoot 里 /proc/net/tcp 为空不可用，改用 shizuku `pidof` + `/proc/<pid>/cgroup`。
-
-<!-- 2026-10-03 10:56:29 -->
-## 交接：WorkBuddy2API-Android → Antigravity 原生适配器（10-03 会话末尾，WIP 分支）
-
-
-**交接文档（下个会话第一件事读这个）**：`/var/minis/shared/HANDOFF-2026-10-03-wb2api-antigravity.md`
-（含：方向锚点、已实测协议事实、未完成清单 P0-P2、风险点、常用命令、用户原话）
-
-**一句话状态**：方向从「OpenAI 兼容透传池」转向「原生凭证导入 + 平台适配器」（用户拍板）。
-Antigravity 协议层**对着 gcli2api 真实凭证全链路实测通过**（token刷新/项目发现/对话派发/模型目录全 200），
-代码已提交 WIP 分支 `feat/antigravity-native` @ `53486d8`，**CI 编译通过**（run 37091417626 success），
-但**接线未完成**（proxy 流转换器未接、导入 UI 未接、/v1/models 未聚合），装了包没有功能。
-
-**关键实测事实（勿重复探测）**：gcli2api 根域名 `/v1` 是 403 死通道、`/antigravity/v1` 是活通道；
-上游 base `daily-cloudcode-pa.sandbox.googleapis.com` 可用；SSE 行格式 `data: {"response":{candidates...}}`；
-非流式请求也返回 SSE 行；凭证 6 字段（access_token/refresh_token/client_id/client_secret/project_id/expiry）。
-
-**许可证红线（重要）**：gcli2api = CNC-1.0（非商业）、OpenMinis = GPL-3.0，**代码都不能抄进 MIT 项目**。
-只能参照「协议事实」（端点/流程/头名/结构），本次实现严格遵守（已向用户说明，用户接受）。
-
-**下一会话待办（按序）**：
-1. 读交接文档 §0/§4
-2. P0：proxy 流式循环接 AntigravityStreamConverter（挂点：ApiHostService proxy SSE 循环）
-3. P0：导入 UI 接平台自动识别（JSON 含 refresh_token+project_id → upsertAntigravityCredential）
-4. P1：/v1/models 聚合 Antigravity 目录（复用 modelsForRegion 缓存模式）
-5. P1：上游池去留（用户已说「方向错了要处理掉」，建议方案 B 降级为兜底，待用户确认后执行）
-6. 接线后：JVM harness 补 upstreamChatUrl 用例 → 真机验证
-
-**用户风格提醒**：本轮会话我出现「鬼打墙」（反复读同样代码段不产出），用户明确批评并要求交接。
-下个会话避免：不要重复读同一文件；批量读（一次 shell 读多处）；读完立即动手改，不要空转。
-
-<!-- 2026-10-03 11:59:13 -->
-## 方向关闭：WorkBuddy2API Antigravity 原生适配器（10-03，用户拍板放弃）
-
-
-**用户原话**：「仔细想了一下，算了，不搞这个了……直接用别人做好的，可能是个更好的选择。」
-**理由**：gcli2api 已完整托管 Antigravity（凭证轮换/模型池/多账号），手机端重造 = 重复建设。
-**留档**：分支 `feat/antigravity-native` @ `9c18fef`（接线完成 + CI 绿 run#6），未合并 main，不再动。
-**后续**：Antigravity/Codex 需求直接用现成方案（gcli2api / OpenMinis），不自研适配器。
-HANDOFF 文档已标注方向关闭。
-
-<!-- 2026-10-03 20:49:11 -->
-## cmfa 分支 fix/cf-optimizer-hardening CI 失败已修（10-03，commit 096a19f，run 19 green）
-
-
-**根因链（4 连失败 = 缺本地编译回路的典型症状）**：沙箱无 Android SDK，并行会话（3700b9bf）只能靠 CI 当编译器，4 次 push 各修一处编译错误，从未走到打包：
-- run15 @bd5643a：CfOptimizerService.kt:38 Unresolved / CfOptimizerSettings.kt:438 / CfWorkerClient.kt:159 `when` 不穷尽 / CfQualityTriggerModule.kt:48
-- run16 @affd66e：CfWorkerClient.kt:159 `when` 不穷尽（同上残）
-- run17 @a3f0a54：service 测试 harness Conflict/Overload（CfQualityGateHarness.kt、CfOptimizerMemoryHarness.kt）
-- run18 @a5f51af：`:app:compileAlphaReleaseKotlin` — **`CfOptimizerSettingsActivity.kt:25` / `NetworkSettingsActivity.kt:30` Unresolved reference 'CfOptimizerSettingsStore'**
-
-**最后一条的机制**：把 `lastRunAt` 写入删除时把 import 一起删了，但两个 Activity 构造 design 时仍在 `CfOptimizerSettingsStore(this)` —— 删引用点漏了同文件另一处引用点（fix-completeness 同族：删 import 前必须 grep 全文还剩几处使用）。修 = 恢复 2 行 import，零行为变更。
-
-**结果**：run 19 completed success @ head_sha 096a19fc0a… 与本地 HEAD 逐字符一致；5 个产物（universal 121.7MB + 4 ABI）已上传。**停止节点已达，未合并 main**（main 仍 9a865a9）。已 async 通知并行会话 3700b9bf 在 096a19f 上继续、不要在 a5f51af 基础上再推。
-
-**可复用教训**：①无本地 SDK 可编译的仓（cmfa），push CI 前至少跑一遍「import↔引用一致性」静态扫描（删/改 import 必 grep 全文残留引用），能省 1-4 个 CI 周期；②看 CI 失败别只看最后一次：`gh_actions/runs?per_page=6` + 逐个 job 的 `logs_url`（zip 内含 `BuildApk/12_Build.txt` 分步日志）对比错误演变，能看出是「同一错误没修好」还是「打地鼠推进」。③jobs 端点在本账号 token 下**不返回** `check_run_id`/`archive_download_url`，取日志走 run 级 `logs_url`（返回 zip，直接读）。
-
-<!-- 2026-10-03 20:54:54 -->
-## cmfa 分支 fix/cf-optimizer-hardening 已合并 main（10-03，merge 91d0
-
-# cmfa 分支 fix/cf-optimizer-hardening 已合并 main（10-03，merge 91d019f，main=91d019f）
-<!-- 2026-10-03 (later) -->
-
-**合并前核查三项全过**：①diff 20 文件 +365/−139 全读无夹带（workflows 移除 `cat signing.properties` 泄漏 + 新增 `:service:testAlphaDebugUnitTest` 回归步骤、质量门 attempt 后移 `saveAttemptStarted`、物理网络 `Network?`→`Network` 禁默认路由回落 + `VALIDATED`/`NOT_RESTRICTED` 收紧、源 URL `normalizeSourceUrl` HTTPS-only + 同源有界重定向、服务级 `optimization.lock` 运行锁、StateStore 走 PreferenceProvider 跨进程 + legacy 回落）；②CI run 19 success @ head_sha 096a19f 与本地逐字符；③独立证据 = 改签名后全部调用点扫描 0 缺口（唯一 `.lastRunAt` 残引 = 刻意保留的 legacy 只读回落，带 ponytail 注释）。
-
-**合并**：--no-ff merge `096a19f`，合并树 vs 分支 tip 树 SHA 逐字符一致（8f22c139==8f22c139），冲突标记 0，main 未漂移（merge-base=9a865a9）。远端 main == 本地逐字符（91d019f…），远端分支 DELETE 204（push main 确认之后才删），远端只剩 main，本地分支已删。
-
-**后续**：main push 自动触发 CI（build-apk.yaml 的 on:push 绑 main），按既定偏好未等结论。待真机验证：开代理状态跑一轮优选（探测/拉源/上传全绑物理网络，拉源不再回落默认路由——CN 直连 SNI 封锁源可能 sources 段变慢，属预期收紧）、Auto-heal 冷却不再被失败验证消耗、同刻二次触发被运行锁忽略。
-
-<!-- 2026-10-03 22:24:17 -->
-## agent 执行失误盘点完成（10-03，314 条全量编码）
-
-# agent 执行失误盘点完成（10-03，314 条全量编码）
-
-- **语料**：日报 66 份含「坑」标题段落 314 条 → `shared/work/failure-inventory-1003/`（extract_pits/trim_pits/aggregate 脚本 + codes-b1..b4 编码 + stats.json + REPORT.md）。方法：全量通读逐条打机制标签（N 知识/T 工具契约/C 协作/E1-E6 执行与验证细类 + ★复发）。
-- **分布**：T 工具契约 **46%**（148）最大簇 > 装置/判据 19% > 环境知识 17% > 执行完整性 9% > 协作 6%；显式复发 54 条（17%，8 月段未标 → 低估）。
-- **时间演化 = 学习曲线实证**：环境知识 8月40% → 10月2%（被 skills/GLOBAL 吸收）；装置簇绑定判据建设活动期（9月中下旬 34 条）已回落；工具契约全程不衰减 = 持续余量。
-- **结论**：执行失误大头是**工具面问题不是智能问题** → 杠杆第一 = 工具硬化（把「用前先读契约」的纪律卸载进工具）；已登记 backlog §51（gh_sync.sh 5 处硬化候选，待拍板）+ §52（deleted-symbol residue scan 登记不修，升级触发=再烧一轮 CI）。
-- **可复用**：全量盘点流水线（extract → trim → 人工打标 → aggregate）可直接复用于下次盘点； Procedure Layer「知识不是瓶颈」判断被数据验证（N 类衰减 + 复发 17% = 知道≠做到）。
-
-<!-- 2026-10-03 22:33:33 -->
-## cmfa 分支 fix/cf-source-concurrency-1003 核查通过（10-03，CI 绿停，未合并）
-
-# cmfa 分支 fix/cf-source-concurrency-1003 核查通过（10-03，CI 绿停，未合并）
-
-**对象**：cmfa 分支 `fix/cf-source-concurrency-1003` @ `4459fa6`（main 91d019f 之上 1 提交，2 文件 +74/−23）。实现 10-03 登记的两条 backlog：①源拉取串行→Semaphore(4) 有界并发（fetchFrom fun→suspend，withContext(Dispatchers.IO)，async+awaitAll 后按源顺序合并）；②upload 段进 stage_s（markStage(STAGE_UPLOAD) + recorder.stageSeconds 刷新）。
-
-**核查结论（8 项）**：①verify_branch.sh exit 1——仅因 scan.sh 在 cmfa 仓不存在（fail-closed，RikkaMinis 专属装置）；②diff 182 行全读；③调用点：fetchFrom 唯一 caller（coordinator:223，suspend 上下文）✓，STAGE_UPLOAD 全部使用点同函数 ✓，stage_s 写入经 run() finally → persist → appendRunSummary 在 runRecorded 返回后 ✓；④CE 穿出新增正确（CancellationException catch 在 Exception 之前）；⑤lastError/合并顺序/共享状态（merged 只在 awaitAll 后主协程内改）无并发隐患；⑥随机种子 per-source `nanoTime xor url.hashCode()` 解相关（同毫秒两源不再同洗牌序列）✓；⑦无测试引用 CfCandidateSource（编译无破坏）；⑧CI run 37129573276 completed success @ head_sha 4459fa6b… 逐字符一致。**停止节点已达，未合并，合并权在用户。**
-
-**登记观察（非缺陷）**：①`source ok elapsed=` 语义变了——现在只计下载耗时不含信号量排队等待（更准确，日志对比历史时注意）；②fetchFrom 拉源/解析仍零测试（Android Network 依赖，测试盲区持续，与既往登记一致）。
-
-**真机验证口**：跑一轮优选看 runs.jsonl：stage_s 应含 `upload` 字段、sources 段应从 164-207s 降到 ~40-60s；`adb logcat -s CFOptimizer | grep "stage=upload"` 应有行。
-
-**坑**：verify_branch.sh 的项 3/6（scan.sh 20 门）绑死 RikkaMinis 仓路径，跨仓核查时必然 fail-closed——cmfa 核查用「冲突标记 0 + ponytail 旗标 0 + CI 编译 + 调用点 grep」替代，已在回报中如实标注装置缺失。
-
-<!-- 2026-10-03 22:36:55 -->
-## gh_sync.sh 四处硬化已落地并实测（10-03，用户拍板「该处理的处理」）
-
-# gh_sync.sh 四处硬化已落地并实测（10-03，用户拍板「该处理的处理」）
-
-- **修复**（github-ops/scripts/gh_sync.sh）：①26 处 arg 循环 `*)` break → 未知选项 err+exit 1（原 --dir 被吞同族）；②push 缺 --branch 解析当前分支 + 推后 `git ls-remote --heads | grep "refs/heads/<br>$"` 核验 + --force 透传（`[gh-sync-push-explicit]`/`[gh-sync-push-verify]` 标记）；③delete-branches 逐条记 OK/FAIL + failn>0 即 exit 1（`[gh-sync-delete-verify]`，原 `|| true` 吞全部失败 + add_row 无条件 OK）；④gh-actions-dispatch 记录 dispatch 前 latest_run，15s 内出现更新的 workflow_dispatch run 才算 OK（`[gh-sync-dispatch-verify]`，原 204≠run 已建）。
-- **实测**：T2 未知选项 rc=1 / T5 push 失败可见 rc=128 / T6 delete 真实结果 / T7r delete 真实失败 exit 1 / T8 dispatch 404→FAIL / T9/T10 真实 GitHub push+核验 PASS（测试分支 test/ghsync-hardening 已删，remote 0 残留）。
-- **重要发现（22:50 三轮探针后修正过度归因）：PRoot 本地 git push + clone --local 不可用，fetch 整条链路健康**——push 收包死在 receive-pack quarantine 迁移（跨目录 link/rename EPERM：`failed to create link '.l2s.tmp_obj_...'`，/tmp 与 f2fs 同样；对象写入后被清理 → `unpack should have generated X` + objects 目录清空）；clone --local 死在硬链接扇出（同款 EPERM）。fetch（bare/非 bare/bundle/增量/100 文件载荷/tmp/f2fs）全过；同目录 link、松散对象读写、无迁移场景 index-pack 全正常。断点只在「跨目录迁移」一步，thin pack/协议 v0/file:///unpackLimit/threads=1 七变体全灭救不动。与 GLOBAL「跨克隆 fetch bad pack header」同族但范围收窄。**食谱见本日「PRoot 本地 git 传输食谱」条目。**
-- **verify_branch.sh base 回落硬化 09-25 已落**（`[verify-base-explicit]` 显式拒绝静默回退）——盘点 §51 的「可选捎带」是重复项，未再改。
-- **残留 P2**：gh-* API 子命令（issue/pr/label/release create 等）add_row OK 行可能带 HTTP 错误文本（同族假成功），radius 纪律未修；升级触发 = 再被「OK 行里藏 404」误导。
-- **可复用教训**：①裸 `git push origin --delete` 在沙箱失败的真实原因是没挂 askpass（非凭据/网络错误）——gh_sync 封装的价值实证；②盘点→筛选→修复闭环首次走通：46% 最大簇 → 只修可控面（自家脚本）→ ~60 行 ×0 新装置；③筛掉的候选全部有数据理由（E5 已收敛、E1/E2 CI 兜得住、N 已吸收）。
-
-<!-- 2026-10-03 22:37:44 -->
-## cmfa 分支 fix/cf-source-concurrency-1003 已合并 main（10-03，merge
-
-# cmfa 分支 fix/cf-source-concurrency-1003 已合并 main（10-03，merge 8864c79，main=8864c79）
-
-**合并**：用户放行「合并吧」，--no-ff merge `8864c79`（父 91d019f + 4459fa6）。合并前核查三项全过（本会话上一轮核查回报：diff 182 行全读 / 调用点 0 缺口 / CI run 37129573276 success @ 4459fa6 逐字符）。合并树 vs 分支 tip 树 SHA 逐字符一致（e2c419ec==e2c419ec），冲突标记 0，main 未漂移（merge-base=4459fa6）。远端 main == 本地逐字符（8864c79…），gh_sync.sh push OK，远端分支 DELETE 204（push main 确认之后才删），本地分支已删，远端只剩 main。main CI 自动触发 @ 8864c79（run 37130199391/386 in_progress），按既定偏好未等结论。
-
-**待真机验证（装 8864c79 新包后）**：跑一轮优选看 runs.jsonl——stage_s 应含 `upload` 字段、sources 段应从 164-207s 降到 ~40-60s（有界并发 4 生效）；`adb logcat -s CFOptimizer | grep "stage=upload"` 应有行。
-
-**坑（复发预防）**：远端残留分支清理时 422 = ref 已不存在（本地 branch -r 是 fetch 旧缓存），用 ls-remote 核实为准，别按 422 当错误重试。
-
-<!-- 2026-10-03 22:45:08 -->
-## PRoot 本地 git 传输食谱（10-03 三轮对照探针实测定案）
-
-# PRoot 本地 git 传输食谱（10-03 三轮对照探针实测定案）
-
-- **能用的（全部实测 PASS）**：①**方向翻转**——本地推进用 `git -C <目标> fetch <源路径> <refspec>` 替代 push（bare 直接 `ref:ref`；非 bare 用 `+ref:refs/remotes/src/<ref>` 再 `merge --ff-only`，**别 fetch 进当前分支**——那是 git 标准拒绝，非沙箱问题，E1 已甄别）；②**bundle 搬运**——`git bundle create x.bundle <ref>` + `git -C dst fetch x.bundle <refspec>`；③**新克隆**——`git clone --no-local`（别用 --local）；④**push 到 GitHub 照常**（sender 侧 pack-objects 正常，真实远端 push+ls-remote 核验已证）。
-- **断的（避开）**：本地 push（receive-pack quarantine 跨目录迁移 link/rename EPERM → `unpack should have generated X`，objects 目录清空=对象写入后被清理）；`clone --local`（硬链接扇出同款 EPERM，`.l2s.tmp_obj_*` 临时名）。
-- **健康基础件**：同目录 link、松散对象读写、无迁移场景 index-pack（stdin 从文件重定向）全正常——断点钉死在「跨目录迁移」一步。
-- **救不动的（别再试）**：thin pack、--no-thin、protocol.version=0、file:// URL、receive.unpackLimit 高值、pack.threads=1 双侧——7 变体全灭。
-- 探针脚本 `/var/minis/shared/work/ghsync-probe{,2,3}.sh`（一次性，目录已清理）。
-
-<!-- 2026-10-03 22:52:26 -->
-## 沙箱缺陷注册表落地（10-03，用户拍板「按你建议的来」）
-
-# 沙箱缺陷注册表落地（10-03，用户拍板「按你建议的来」）
-
-- **资产**：`/var/minis/shared/sandbox-limits.md`——25 条（A 类路径缺陷 17 条有旁路 / B 类硬边界 5 条换层绕开）+ 元规则 4 条：解法空间三选一（同层旁路 → 跨层旁路 → 识别后设计绕开）；先探针归因再入表入记忆；救不动的变体要记（防后人重试）；unknown unknowns 走流程准入不靠预知。
-- **读边已固化**：GLOBAL「两条无条件约束」→「三条」——③沙箱内命令失败/文件消失/读数可疑，先查注册表 `/var/minis/shared/sandbox-limits.md` 再动手；新失败先探针隔离归因再入表。
-- **模块形状判定（一阶门）**：运行时 shim 否决（agent 能直接敲命令）/ 探针脚本库否决（装置比例违规）/ 验证注册表 + 读边纪律 = 正确形状。
-- **攒着**：skill 升格 → backlog §53（触发条件 = 注册表召回失效实证）。
-- **A/B proof（git push 案例）**：GLOBAL 有 bad pack 记录仍烧 3 轮探针 + 1 条错误结论入记忆；注册表按**症状**索引，失败现场一查即中（A1 含 7 个救不动变体清单）——叙事记忆的召回在「失败的当下」失效，结构化注册表修的就是这个。
 
 <!-- 2026-10-03 23:55:06 -->
 ## 「散落资产 → 下沉到代码层」盘点（10-03，用户问：有哪些散落在脚本/记忆中的可以下沉到 app 自带代码）
@@ -28316,6 +27996,470 @@ HANDOFF 文档已标注方向关闭。
 - 未修（纪律）：debug 守卫严格形式剩 2 处 main 基线遗留（OkHttpNetTraceListener.kt:45 + NetTraceRedactionTest.kt:6）——B2 fail-open（scan.sh `source` 形式恒绿）单独立项，backlog §56 登记。
 
 **流程教训**：feature 分支也能 `gh workflow run build-apk.yml --ref <branch>`——本地无 android.jar 时，android 依赖代码（store/runner/UI）尽早触发 CI 编译，别攒到最后。
+
+## 2026-10-05
+
+<!-- 2026-10-05 07:46:19 -->
+## feat/scheduled-tasks-l0-1004 已合并 main（10-05，merge 4f40e4af，main=4f40e4af）
+
+
+**合并前核查三项全过**：①diff 28 文件逐文件过（21 代码/测试 + 4 docs，CompactCancelOnStopTest/SandboxDefectRegistry 假象=对比过 stale 本地 main 所致，vs origin/main 干净）；②本地 35 JVM 测试绿（沙箱复跑）+ 熔断变异负向对照红 + 静态门禁（i18n/四层/守卫）绿 + **全量 Build CI @ b21074b6 绿且 head_sha 与本地 HEAD 逐字符一致**（我手动 dispatch 的 run 37243957052——交付报告绿的 cdaf6b49 之后又加了 2 个 docs 提交，CI 需补跑覆盖 HEAD）；③三源取二：CI + 沙箱实跑 + 变异对照。
+
+**合并细节**：--no-ff merge（合并树 == 分支树 b21074b6 逐字符一致），gh_sync.sh push main OK（远端==本地逐字符），**PR #4 被 GitHub 自动标记 merged**（本地 merge commit 含 head 作为 parent 时 GitHub 会检测）——本地 merge 方式也能正确关闭 PR。main CI 自动触发 run 37244909315 @ 4f40e4af（按既定偏好未等结论）。
+
+**发现（低风险，登记待拍板）**：b21074b6 dev-history 重建把 9-30 记忆条目带进 public 仓库归档，含 3 个 account-id 尾段（`尾 0f2a4a/3e8b72/98dbb0`，均为 32-hex ID 尾 6 位）+ `Lo…m 账号` 半截名。sanitize 替换了邮箱（[EMAIL]/***USER***）但**规则盲区：无「尾 N 位 hex」模式**（PROBES 只有 hex32/email 等）。不可直接利用（6/32 hex 无法还原；account id 非凭据），且公开历史早有 `fd…4a` 头2尾2 先例（0da07a10，8-30）。波及面：仅此一处（短 hex 全扫描与 main 基线一致，outlook 残留预存在已净化）。**修法**：sanitize_dev_history.py 加 `尾 [0-9a-f]{4,}` 规则 + 重跑验证；记忆源文件 2026-09-30.md:148 仍含尾段——不补规则的话下次 rebuild 还会带出。是否修已合并历史不建议（force-push 成本高）。
+
+**待办**：真机七项清单（交付报告 §6.3，用户侧，L0 交付闭环最后一环）；远端分支 feat/scheduled-tasks-l0-1004 未删（用户拍板）。
+
+<!-- 2026-10-05 07:56:34 -->
+## 压缩实验收尾 + 任务书 C（2026-10-05）
+
+- 压缩衰减实验（compact-exp-1004）v1/v2b 均完成：埋入曲线归一化后 bare/pin 两臂 6 轮零衰减；负控 0/10。核心结论：压缩管线信息保真没问题，真正的故障模式是输出通道 4096 token 封顶（WorkBuddy 静默截断 finish_reason=length 不报错；agentrouter 报错中止）+ 思考重模型撞 30s 候选预算（GLM-5.3-Flash 两次真机 TIMEOUT candidate=1/1，安静时 7s 成功）。
+- 用户拍板（A+B）：任务书 C 已写好待手动派发：`shared/work/task-brief-1005-C-compact-truncation-guard.md`。内容 = ①压缩成功分支检查 stopReason=="length" 视同失败走下一候选（LLMResponse.stopReason 字段现成但此前无人消费）；②declaresNoEffortTiers==true 候选预算 30s→60s（整链 120s 不变）。明确非目标：跨组借压缩器、模型目录标记、splitter halving。
+- 教训：judge 通道（gcli2api gemini）间歇 403 风控——实验脚本 judge 已硬化为 5 次退避重试 + GLM-5.3-Flash 异构兜底（call_judge 返回 judge_used 记录进 summary.json）。未来长跑实验脚本一律带异构兜底。
+- 实验基础设施：run_experiment.py 支持 EXP_DATA/EXP_OUT/EXP_COMPACTOR 环境变量 + checkpoint 续跑 + 4096 截断守卫（out_tok>=4096 计为失败，防截断摘要进重写链）。
+
+<!-- 2026-10-05 08:24:46 -->
+## 压缩实验 D+E 收官：阳性对照成立 + 视界实锤（2026-10-05）
+
+- D（衰减阳性对照，10 轮）：真值 R1 声明一次 + 变体冲刷 → R1 10/10 → R2 即 0/10，且答案**确定性漂移成最近变体**（覆盖而非淡忘）；每轮重申臂 10 轮全 10/10（pin 机制等效有效）。mech 子串检查全程 10/10 假绿——行为学 judge 才能抓到污染。装置有效性确立 → v2b 阴性结论（零衰减）站住，但外推以材料为界。
+- D-hold R6 compactor 六连撞 4096 cap 确定性失效（committed 已 8281c）；E（12 轮低价值填充）摘要 ~3.5k 字符/2.1k tok 饱和回落无撞顶 → **视界不是固定轮数，是材料"必须保留密度"的函数**（MUST PRESERVE 迫使逐字保留标识符 → 信息密集会话单调膨胀→撞顶）。
+- 统一结论：信息不凭空丢失但被同主题后续话术覆盖；防护=重申（pin）；失效视界存在且可测。生产含义：高密度工具输出的长会话最早触达。
+- 归档：compact-exp-1004/REPORT_DE.md + results_d_hold/_repeat/_e；run_experiment.py 已参数化（EXP_ARMS/EXP_NEGCTL，单臂兼容）。任务书 C（stopReason=length 守卫）待派发，与视界登记项互补。
+
+<!-- 2026-10-05 08:27:08 -->
+## 任务书 C 执行完成：压缩摘要截断守卫 + 吵闹候选 60s 预算（fix/compact-truncation-guard-1005，CI 绿停）
+
+<!-- 2026-10-05 -->
+
+**状态：分支 CI 绿 @ tip，确定性停止节点已达成，未合并（合并权在用户）。**
+- 分支 `fix/compact-truncation-guard-1005` @ `6bdcff5`（本地==远端逐字符）；CI run #1920（id 37246489649）success，head_sha==6bdcff5 逐字符，checkout 步骤日志确认拉的就是该 commit；链接 https://github.com/***OWNER***/RikkaMinis/actions/runs/37246489649
+- 改动：ChatSessionLifecycle.kt（+守卫+3 个纯 helper）、ChatViewModel.kt（+COMPACT_SUMMARY_NOISY_CANDIDATE_BUDGET_MS=60_000L）、新测试 CompactTruncationGuardTest.kt（11 测试）；285+/5−。旧测试零改动（本地+CI 全绿）。
+
+**实现要点（供 merge 前核查者）**：
+- A 守卫：Success 分支 `compactSummaryIsTruncated(r.response.stopReason)` → "length" 记 lastFailure（消息含 truncated）+ continue；null/end_turn/stop/未识别值放行。trim+lowercase 归一化。刻意窄于 TruncatedToolCallPolicy.isTruncatedFinish（KDoc 注明）。
+- B 预算：`compactionCandidateBudgetMs(declaresNoEffortTiers, nowMs, deadlineAt)`（minOf(60s/30s, deadline−now)），120s 整链上限不变；`budgetMs<=0` 终止分支行为不变。
+- **落位决策**：helper 放 ChatSessionLifecycle.kt（文件无顶层 val、<clinit> 平凡，JVM 调用安全=CI 实证）而非 ChatModelRouting.kt——保住 CompactQuietFirstTest:133 的 `indexOf("COMPACT_SUMMARY_CANDIDATE_BUDGET_MS")` pin 零改动（helper 体内仍含该串）。
+- stopReason 全链路透传本已存在（OpenAIProvider :604/:609 → worker ModelExecutionService:1050 `stop_reason` → gateway :204 parse），无需改 provider/worker。
+
+**验证装置（三源）**：
+1. 沙箱 JVM harness（/var/minis/shared/work/rk-compact-1005-verify/）：从生产文件机械提取 helper（禁手抄）+ stub 常量也提取自生产 → 11/11 绿；
+2. 变异负控矩阵：纯逻辑双变异（谓词→max_tokens + 预算分支对调）→ 恰 4 红（length-fires/cosmetic/noisy-60s/quiet-30s）7 绿；接线 4 变异（删守卫/回退内联/continue→return/守卫移到 return 后）→ 各自精准单红、零串扰；
+3. CI 全量套件 + 逐名 PASSED 核对（11 个新测试名全 PASSED，compact 族零失败；3715 PASSED 行）。
+**可复用技巧**：接线 pin 的负控不用重编译——把单个源文件复制到伪仓库根 `<mut>/src/android/app/src/main/...`，以该目录为 cwd 跑同一测试 jar，readRepoFile 上行查找即命中突变文件。
+
+**已知未验证（如实登记）**：
+- 真机冒烟（用户侧）：GLM-5.3-Flash 单成员手动压缩——预期要么 SUCCESS、要么 `TIMEOUT after ~60000ms`（验 B）；真机日志 grep `[Compact] summary TRUNCATED` 验 A 的运行时触发（透传链为代码读级证据+CI 编译级，运行时首现待观测）。
+- 升级触发（若未来出现）：其他拼写（如 max_tokens）通道被观测到静默截断 → 扩守卫拼写集（可考虑与 TruncatedToolCallPolicy 统一）；未标成员反复 TIMEOUT → 本地覆盖名单。
+
+<!-- 2026-10-05 08:29:36 -->
+## 压缩改进任务书 C/D 状态（2026-10-05）
+
+- 任务书 C（stopReason=length 截断守卫 + 吵闹候选 60s 预算）已派发并施工完毕：分支 `fix/compact-truncation-guard-1005`，单 commit 6bdcff53，测试 CompactTruncationGuardTest 202 行，CI 绿，**待用户合 PR**。实现质量核过：budget 逻辑抽成 top-level 纯函数 compactionCandidateBudgetMs（JVM 可测），守卫语义与任务书一致（null/end_turn/stop 放行只拦 length）。
+- 任务书 D（压缩遥测 chars/outTok + MUST PRESERVE 追加 SUPERSEDED VALUES 折叠条款）已写好待派发：`shared/work/task-brief-1005-D-compact-telemetry-superseded.md`。要点：基于 C 分支开工（若未合并从该分支切出）；A/B 分开 commit 以便 B 出问题时单独 revert；提示词措辞照抄勿改（依据实验 D 的 recency-wins 发现 + E 的密度驱动发现）；合并后由立项会话用 compact-exp-1004 管线跑实验侧回归（不在任务书范围）。
+- 视界问题的结构性解法（分段滚动归档：摘要超阈值把最老 30% 封存 append-only）已明确为"另行立项"，未开工；pin 机制挂起视 D 落地后生产数据再议。
+
+<!-- 2026-10-05 09:42:43 -->
+## 任务书 D 执行完成：压缩遥测 + SUPERSEDED 条款（fix/compact-telemetry-superseded-1005，CI 进行中）
+
+<!-- 2026-10-05 09:50 -->
+
+**状态：两个 commit 已推远端 + CI 已 dispatch（run 37252315441），独立会话执行任务书 D 全文。**
+- 基线：C 分支 6bdcff5（未合 main、无 PR）→ 按 §依赖关系从该分支切出 `fix/compact-telemetry-superseded-1005`。
+- Commit A（3c70295，遥测）：`compactSummaryTelemetrySuffix(response)` 顶层纯函数 + SUCCESS 行尾追加 ` chars=N outTok=M`（usage null 省略 outTok 段——absent=unknown，0=empty，语义分开）；测试 CompactTelemetryTest 6 个（字面期望 + 源文本 pin：后缀骑在既有行上、Success 分支恰好 2 个 AppLogger.info 防新增日志行）。
+- Commit B（e71342c，条款）：ContextCompactor.COMPACT_SUMMARY_SYSTEM_PROMPT 在 MUST PRESERVE 之后逐字插入 SUPERSEDED VALUES 条款（550 字节，与任务书 byte-exact 程序化双验：插入时+暂存时）；AutoCompactPolicyTest +2 断言（SUPERSEDED 段存在+顺序、FINAL value+verbatim 共现），既有 T5 断言零改动。
+
+**验证（三源，对齐 C 会话模式）**：
+1. 沙箱 JVM harness（rk-compact-1005-dverify/）：生产文件机械提取 + 测试逐字 → A 6/6、B 20/20、C 复跑 11/11 绿（A 改同区域零破坏）；
+2. 变异负控：A 纯逻辑双变异 5 红 1 绿（接线 pin 不测 helper=零串扰）；A 接线删除变异以伪仓库根为 cwd 跑 → 精准单红（漏 cwd 会全绿——教训：接线负控必须切 cwd）；B 三变异=条款删除 2 红/安全带删除 1 红/MAY→MUST 0 红（已知盲点：§3 未要求、字面 pin 覆盖不到措辞强度，实验侧回归兜底）；
+3. 编译求值 probe：SUCCESS 行表达式逐字节搬进 stub（SendResult.Success 形状 .response + 剥悬空逗号 + 包成实参调用），kotlinc 编译+求值输出与任务书格式示例逐字符吻合（`in 7256ms chars=4221 outTok=2180`）——本地无 SDK 无法编译生产文件，此 probe 补上接线表达式的编译级验证。
+
+**环境事实（本会话实测）**：PRoot 沙箱在 Android 设备上（ps 可见 com.rikkaminis.app 的 proot 进程），无 Android SDK、无 adb；装 SDK 不可行（gradle 依赖缓存仅 329M/74 group 是 stub 安装残骸）。真机重装 APK 会杀运行中的沙箱=自杀。scan-gate（20 项 Python 静态门禁）本地可跑，最终 HEAD 全绿。
+
+**已知未验证（如实登记）**：
+- §4.2 真机冒烟：需用户侧装 CI 产物（Artifacts tab，非 Release——publish gated to main）后 grep `[Compact] summary` 验 `chars=` 段；提醒：装包会终止包括本会话在内的全部运行中 minis 会话。
+- §4.3 实验侧回归（D-repeat 语义）：合并后由立项会话跑 compact-exp-1004 管线，不在本任务书范围。
+- B 的 revert 路径已备好：单独 revert e71342c，A（3c70295）不受影响。
+
+<!-- 2026-10-05 09:56:13 -->
+## 任务书 D 执行完成（终态）：CI 绿 @ tip，确定性停止节点达成，未合并（合并权在用户）
+
+<!-- 2026-10-05 10:05 -->
+
+**分支 `fix/compact-telemetry-superseded-1005` @ `e71342ca`（本地==远端==CI head_sha 逐字符）；CI run 37252315441 success（11m53s），全量 3723 PASSED / 0 真失败（5 行含 "FAILED" 字样均为 PASSED 测试名），compact 家族（Telemetry/TruncationGuard/AutoCompactPolicy/QuietFirst/CancelOnStop/Graying/Logic/Silent）零失败。链接 https://github.com/***OWNER***/RikkaMinis/actions/runs/37252315441**
+
+**交付物（两个 commit，A/B 分开可独立 revert）**：
+- A `3c70295`（遥测）：`compactSummaryTelemetrySuffix(response)` 顶层纯函数；SUCCESS 行尾 ` chars=N outTok=M`（usage null 省略 outTok——absent=unknown、0=empty 语义分开）；CompactTelemetryTest 6 测试（字面期望 + 接线 pin：Success 分支恰 2 个 AppLogger.info 防新增日志行）。
+- B `e71342c`（条款）：COMPACT_SUMMARY_SYSTEM_PROMPT 在 MUST PRESERVE 之后逐字插入 SUPERSEDED VALUES 条款（550 字节与任务书 byte-exact，插入时+暂存时程序化双验；既有七条 bullets 零改动程序化核过）；AutoCompactPolicyTest +2（SUPERSEDED 段存在+位于 MUST PRESERVE 之后、FINAL value+verbatim 从 final 起点共现）。
+
+**验证三源（对齐 C 会话标准）**：沙箱 harness（rk-compact-1005-dverify/，机械提取+测试逐字）A 6/6、B 20/20、C 复跑 11/11；变异负控 A 纯逻辑 5红1绿/接线删除精准单红（必须以伪仓库根为 cwd 跑，否则全绿——复用 C 的技巧）、B 条款删除 2 红/安全带删除 1 红/MAY→MUST 0 红登记为已知盲点（实验侧回归兜底）；编译求值 probe（SUCCESS 行表达式逐字节搬进 stub：SendResult.Success 形状 + 剥悬空逗号 + 包成实参调用）输出与任务书格式示例逐字符吻合 `in 7256ms chars=4221 outTok=2180`。
+
+**流程细节（防丢）**：`.commitmsg` 是 scheduled-tasks-l0-1004 合并带进仓库的 tracked 文件（残留上一任务的提交信息草稿），本会话已删除——下次任务书执行者无需绕开；scan-gate 20 项本地全绿；CI 的 sign-compare 注解告警来自 proot C 源码，与本任务无关（C 分支同款）。
+
+**已知未验证（用户侧）**：①真机冒烟：装 CI Artifacts 产物后 grep `[Compact] summary` 看 `chars=` 段（发布 gated to main，Artifacts tab 才有分支产物；**装包会杀掉运行中的 minis 会话**）；②实验侧 D-repeat 语义回归：合并后由立项会话跑 compact-exp-1004 管线（任务书 §4.3 明确不在本任务书范围）；③B 出问题的回滚路径：单独 revert e71342c，A 不受影响。
+
+<!-- 2026-10-05 10:07:12 -->
+## 2026-10-05 compact 分支合并完成（用户令：检查今天分支修改，没问题就合并）
+
+
+**任务**：今天未合并分支 = C（fix/compact-truncation-guard-1005 @6bdcff5）+ D（fix/compact-telemetry-superseded-1005 @e71342ca，含 C+A+B）；scheduled-tasks 已于今晨合入 main（4f40e4a）。
+
+**核查证据（合并前三项全过）**：①diff 全读（C 3文件+285/−5、D 4文件+215/−1；无夹带/调试残留；`git diff --check` rc=0 无冲突标记）；②CI run #1920 @6bdcff5、#1921 @e71342ca head_sha 逐字符 == 分支 tip，均 success（workflow_dispatch）；③独立证据 = harness 复跑——C 11/11 + 4 接线变异各精准单红；D A 6/6 + B 20/20 + 接线变异单红 + 纯逻辑变异 5红1绿；probe 复跑逐字符吻合；scan-gate 20/20；保真度机械核（Helpers⊆生产逐字、两测试 verbatim、ContextCompactor/ContextPolicy 全文==、DataClasses 片段 3/3+12/12）。
+
+**合并**：main 4f40e4a → 605aea8（Merge C）→ 9305371（Merge D），两 merge 均 --no-ff、合并树 vs 分支树 SHA 逐字符一致（a7e9458d / 8db0df04）；push 成功（4f40e4a..9305371），远端==本地（930537118146...）；main CI run 1922（id 37254050739）in_progress @9305371（未等结论，按既定偏好）。
+
+**工具细节（可复用）**：①rikka-ci-bridge 查分支状态用**未编码斜杠** `/status/fix/xxx`（%2F 编码返回 not found）；②run 详情 head_sha 用 API `/actions/runs/<id>`（bridge 不给 SHA）；③harness 接线 pin 正跑 cwd=真仓库 `src/android/app`（readRepoFile 向上找 `app/src/main/...`），负控 cwd=伪仓库根（wire-mut/src/android/app，读变异文件）——漏 cwd 会 FileNotFound 或全绿假象；④D harness 提取策略=只提 D 新增函数（C 部分由 C harness 覆盖）——检查标准应为「⊆生产」而非「==重提取区间」。
+
+**遗留/待办**：①C、D 远端分支保留中（待用户指示是否删）；②`.commitmsg` 残渣登记 backlog §57（零引用，P2）；③D-repeat 实验侧回归（compact-exp-1004 管线）前提已满足（合并完成），待立项会话跑；④真机冒烟（装 CI 产物 grep `[Compact] summary` 的 `chars=` 段）。
+
+<!-- 2026-10-05 10:56:02 -->
+## RikkaMinis 主 clone 全景调查 + defect-registry 分支处理完毕（用户追问触发）
+
+
+**用户问**：feat/defect-registry-recall-1003 是干什么的？是不是忘了删的？
+**答案**：它是「shell 工具失败时自动附注 sandbox-limits 缺陷注册表提示」功能（SandboxDefectRegistry.kt 202 行纯 JVM parse/match/render + ChatPromptAndTools 接线 +27 行 + 测试 225 行，commit 666964bc @10-04 00:58；设计：无注册表/无匹配/读错 → 结果不变，dormant 零破坏）。**已于 10-04 08:33 经 66cac97a 合并进 main**——用户记得没错，是忘删的本地残支（从未推送远端）。**已删除**（git branch -d 安全模式通过，was 666964bc）。
+
+**深挖发现 1——其余 8 个本地分支全部同为「已合并残留」**（用 merge parent 字段逐字符验证，shallow 免疫）：
+- tier1（f5009adf）：b4592399 parent2 == tip ✓
+- fastio-3（0080f420）：debf06e9 parent2 == tip ✓
+- offload（3e496953）：0af354ac parent2 == tip ✓
+- a11y（70a93bc3）：26b7ce1a parent2 == tip ✓
+- quiet-first（4d1c9a25）：6361b410 parent2 == tip ✓
+- clearchat（ee2b2cea）：is-ancestor=是 ✓
+- scheduled-tasks（b21074b6）：在 main 链 ✓
+- fastio-2（d74a49c1）：主体经 98edf12b→20c0c16b→debf06e9→b4592399→main；tip 残差 11 行=旧注释被 main 覆盖 ✓
+合并链全景：fastio-2/offload/a11y → 20c0c16b/debf06e9 → tier1 → b4592399 → main。
+
+**深挖发现 2——该 clone 是 shallow（浅化）**：.git/shallow 4 个 graft 点（0080f420/20c0c16b/4d1c9a25/b4592399，全 Oct 1 提交）；origin/main 仅 23 提交可达；**merge-base/is-ancestor 假阴性**（误报未合并）。绕过法 = `git cat-file -p <merge>` 读 parent 字段（对象原文不受遍历截断影响）+ 树对比。
+
+**其他处理**：主工作树从旧分支切到 detached @ origin/main(9305371)；2 个无主修改（assets/skills/semantic-memory 回写半成品，与沙箱版逐字节相同）已丢弃（可再生：cp /var/minis/skills/semantic-memory/）；8 个残支保留待用户一句话（backlog §58，SHA 已记录可随时重建）。
+
+**技巧收录**：①「已合并」铁证 = merge commit parent 字段 vs 分支 tip 逐字符对比（shallow 免疫）；②浅化下 is-ancestor「否」不可信、「是」可信（假阴性单向）；③跨 worktree 不能删别的 worktree 占用的分支（main 在 rk-sched-1004 worktree）。
+
+<!-- 2026-10-05 10:59:25 -->
+## RikkaMinis 主 clone 清理执行完成（10-05，用户令「清理」）
+
+
+**执行**：8 支已合并残支全部删除——tier1=f5009adf、fastio-2=d74a49c1、fastio-3=0080f420、offload=3e496953、a11y=70a93bc3、quiet-first=4d1c9a25、clearchat=ee2b2cea、scheduled-tasks=b21074b6（3 支 -d 直过；5 支因浅化误判走 -D）。含此前删的 defect-registry，本轮共清 9 支。主 clone 现仅余 main（挂 rk-sched-1004 worktree）+ 工作树 detached @ 9305371。
+**删除后复核（零损失兑现）**：8 个对象全部仍在；fastio-2 最后疑云闭环——98edf12b 的 parent == d74a49c1（链：e47c6560→57693ba6→d74a49c1→98edf12b→20c0c16b→debf06e9→b4592399→main）→ 所有提交 ∈ main 图，随时可重建。
+**待机项**：远端 3 个旧分支（C=6bdcff5、D=e71342ca、scheduled-tasks=b21074b6）未动（等用户示下）；unshallow 未执行。backlog §58 已更新「已清 + 待机项」。
+
+<!-- 2026-10-05 11:05:13 -->
+## 远端 3 旧支 + rk-compact 残支清理完成（10-05 第二轮，用户令「旧的已合并的没用了，处理了吧」）
+
+
+**执行**：远端 3 支全删——fix/compact-truncation-guard-1005（6bdcff5）、fix/compact-telemetry-superseded-1005（e71342ca）、feat/scheduled-tasks-l0-1004（b21074b6，此前保留拍板随用户令放开）；rk-compact-1005 本地 C/D 残支亦清（-D 直删）。**验证全景**：`git ls-remote` 远端只剩 refs/heads/main；4 个工作区（主 clone / rk-compact-1005 / rk-sched-1004 / rk-check-1004）本地分支均只剩 main、远端跟踪均 = origin + origin/main。至此 RikkaMinis 仓远端与本地全部清至只有 main。
+**gh_sync delete-branches 假 FAIL 解谜（实测，已登记 backlog §59）**：主 clone detached HEAD 状态下 rc=1 报「4 failures」但实际全部成功——根因=本地循环 `$(git branch --format)` 把 detached 合成行 `(HEAD detached at origin/main)` 词分割成 4 个 token 各删除失败；远端删除本身 OK（grep '^origin/' 恰滤掉 HEAD 行）。修复方案=改用 `git for-each-ref refs/heads`（一行）。P2 登记，未顺手修（与清理任务解耦）。
+**技巧**：①跑 delete-branches 前尽量处于正常分支状态（detached 下预期 4 行假 FAIL 噪音）；②`git branch --format` 输出勿直接喂 `$(...)`——用 for-each-ref refs/heads。
+
+<!-- 2026-10-05 15:29:50 -->
+## 应用功能缺口盘点完成（10-05，用户令「看看这应用还有什么功能缺口、哪方面需要强化」）
+
+
+**报告**：`/var/minis/shared/work/app-gap-audit-1005/REPORT.md`（审计产出，未改产品代码）。
+
+**结论**：功能面不缺整块功能（今天主进程 ERROR=1、CI 绿）；实质缺口＝压缩体系（唯一实验驱动）：①静默损坏✅（C 守卫）；②视界撞顶→遥测+SUPERSEDED 已合入；③覆盖式衰减→**pin 未做**（实验：真值 R1 声明一次 R2 即 0/10；重申=完全防护）；④EXHAUSTED 停摆→未修（今天 03:30–07:37 仍 7 次 skip，290–307K vs 250K）。UI 候选（未证需求）：跨会话搜索、成本显示。历史澄清：55703df9（空重试墙）已在 main。
+**建议排序**：D-repeat 后合并回归（零代码）→ pin → EXHAUSTED 救援 → 定时任务真机 7 项清单。
+
+**本会话动作（工具硬化）**：scan_debt.py 3 行窗口→注释块扫描（5/5 no-trigger 误报清零；self-test PASS；app src 22 标记/0 误报）。依据：折行注释的「升级触发」在第 4–6 行，旧窗口读不到。
+
+**环境**：今天 churn 偏重——31 启动/30 静默杀（10–11、13–14 两波），杀窗 RSS ~200MB、无 agent 活跃 → 维持 §18 设备级归因；32–34 会话尾部 PAUSED。
+
+<!-- 2026-10-05 16:19:24 -->
+## 压缩体系剩余队列 → 三份任务书（10-05，用户令「处理成任务，我手动派发」）
+
+
+- **E** pin v0（约束钉住）：`/var/minis/shared/work/task-brief-1005-E-compact-pin-v0.md`。设计已拍板：内嵌方案（`<pinned-user-messages>` 内嵌 summary、零迁移）；3 纯函数新文件 conversation/CompactPin.kt；重写链剥离→拼回（ChatSessionLifecycle:788/259）；round-trip byte-identical 为核心测试。分支 feat/compact-pin-v0-1005。不碰 ContextCompactor.kt（归 F）。
+- **F** EXHAUSTED 救援：`task-brief-1005-F-compact-exhausted-rescue.md`。分阶段门控：阶段0=C0 取证（44万口径+意图复核，KDoc:73-84 已证实动机=防空重试墙）→ 阶段1=C1 救援压缩（Decision.RESCUE + rescueAttempted 调用方持有 + 复位=用户动作）→ 阶段2=C3 日志可判读（rescue= 段）。分支 fix/compact-exhausted-rescue-1005。C2（投影口径）明确不做。
+- **G** SUPERSEDED 后合并回归（零代码）：`task-brief-1005-G-compact-drepeat-regression.md`。run_experiment.py 复跑 D-repeat 臂 @ 新 prompt，max_tokens≥16384，判定写死（mech 10/10 且 beh≥9/10=PASS）。产出 REPORT_REGRESS.md；REGRESS 只交证据不 revert。
+- 派发约定：G 无冲突可先跑或与 E/F 并行；E/F 各自分支基于 main 93053711；E 放新文件+ChatSessionLifecycle、F 只碰 ContextCompactor/ChatContextWindowExt——文件区域刻意错开。
+- 锚点核对过（main 93053711 现行行号）：重写链 :788/调用 :259-261/二分 :815-816/注入 :518-522/estimateTokens ContextCompactor:156/decide :95-123/防抖 :134-138/SUPERSEDED :227。
+
+<!-- 2026-10-05 16:45:45 -->
+## 交付物（单 commit，3 文件 +442/−3）
+
+# 任务书 E 执行完成（终态）：pin v0 已交付，分支 CI 绿 @ tip，未合并（合并权在用户）
+
+**分支 `feat/compact-pin-v0-1005` @ `502f70e`（502f70ef78f00d0af4eb57e3e80c2535da6efa49，本地==远端==CI head_sha 逐字符）；CI run 37284048540 success（bridge + API 双源核对）。链接 https://github.com/***OWNER***/RikkaMinis/actions/runs/37284048540**
+
+- **CompactPin.kt**（新，conversation/）：extractPinnedUserMessages（fold 区 user 原文机械抽取，token 上限 8000 走 ContextCompactor.estimateTokens 同口径；超限取「最近 N 条 + 最早 1 条」）、pinnedSectionInner（多轮携带旧段原文用，不解析回消息）、stripPinnedSection（无段 byte-identical no-op）、appendPinnedSection（幂等 + 防双块；**仅无 carried 时加 header**——carried 已含 header，否则多轮 header 复制）。块格式 `<pinned-user-messages>` 内嵌 summary 字符串，零 DB/marker 迁移。
+- **ChatSessionLifecycle**（+26/−3）：generateCompactSummaryWithSplitting 入口（depth==0）extract+strip、唯一出口拼回；depth>0 递归不传 pin（split/merge prompt 永不见 pin）；无 pin 会话走原路径 byte-identical。注入层 :518-522 零改动（pin 随 summary 一体注入）。fix-completeness 已核：重写链唯一调用路径 :259→:788→:842，无绕过。
+- **CompactPinTest**（新，15 测试）：纯函数套件 + 3 轮 round-trip（mock LLM 全重写最坏情形，pin byte-identical 存活）+ llm-input-never-contains-pin + 注入 proxy + no-pin 会话不变。
+
+## 验证三源
+1. **JVM harness**（/var/minis/shared/work/pin-jvm-1005/，kotlinc 单次编译全部源）：15/15 OK。
+2. **变异负控**（/tmp 副本）：删拼回→4 红（含 round-trip）；删剥离→llm-input 断言红。测试钉在修复点上。
+3. **CI**：run 37284048540 success @ head_sha 逐字符一致（bridge status + API head_sha 两源）。
+
+## 本轮踩坑（可复用）
+- **Regex 无捕获组**：`<pinned...>[\s\S]*?</pinned...>` 编译过、运行时 `No group 1` IndexOutOfBounds——pinnedSectionInner 用 group(1) 必须写捕获组。第一版就踩了，JVM harness 秒抓。
+- **carried 原文含 header**：append 每次无条件加 header → 多轮 header 复制 + carried 不在块顶。修复=仅无 carried 时加 header。
+- **shell 工具 timeout 上限 900s**：显式传 timeout=1800 仍被 900s 截断（gh_ci_wait 在 900s 处被杀）——CI 长等待要么 delay+短查询，要么接受截断后用 bridge/API 查结果。本次 CI 在截断前已完成，直接查 bridge 拿到结论。
+- **真机冒烟未做**（装包会杀 minis 会话，留用户侧）：两轮压缩后 grep `[pinned-user-messages]` 段与 user 原文逐字一致。
+- 与任务书 F 文件区域错开（本分支不碰 ContextCompactor.kt/ChatContextWindowExt），可并行合并。
+
+<!-- 2026-10-05 16:48:29 -->
+## 任务 G 执行完成：SUPERSEDED 条款回归 PASS（零代码，D-repeat @ 生产 prompt 复跑）
+
+# 任务 G 执行完成：SUPERSEDED 条款回归 PASS（零代码，D-repeat @ 生产 prompt 复跑）
+
+**判定：PASS**（硬判据全过）：10 轮 mech 全 10/10、零 token 丢失；behavior 10/10 × 10 轮（判定线 ≥9）；语义核验 100/100（judge 答案全部恰好=真值本身，非子串假阳性）；负控 0/10（data_e R12 无关文本）。条款未过度泛化：R10 summary 把变体列表化保留、重申识别为最终值逐字保留恰好一次、明确「最终生效=第 0 轮初始值」——按设计工作。
+
+**正面副作用**：新 prompt 下 summary 自 R3 起持续小于旧基线，R10 差 ~50%（2874c vs 5710c）——SUPERSEDED 给了合法折叠出口，反膨胀，与实验 E（膨胀由密度驱动）互证。
+
+**报告**：`/var/minis/shared/work/compact-exp-1004/REPORT_REGRESS.md`（同目录 summary_regress.json / 逐轮 txt / run_regress.log）。
+
+**装置与技巧（可复用）**：
+- **prompt 提取锚验证法**：从生产 .kt 提取 raw string + Python 复刻 trimIndent，与旧实验 prompt 做 unified diff——「恰好只差目标条款、旧行零缺失」程序化断言 = 新旧跑唯一变量的最强证据。本次 delta 552c = SUPERSEDED 550c + 1 空行。
+- **语义核验补 substring 假阳性**：mech/behavior 的 token-in-answer 判定对「变体含真值子串」恒假阳性（atlas-prod-cn ⊂ atlas-prod-cn2、短数字 5/30 到处命中）——必须加一层「答案恰好==真值」核对才闭环。REGRESS 方向无假阳性、保守有效。
+- **repeat 数据的负控换无关文本**：内置「末轮转录」负控对 D-repeat 混淆（末轮含重申真值），旧跑直接禁用；改用 data_e R12 无关转录 0/10，比旧跑强且符合任务书意图。
+- **管模块化复用**：importlib 加载 run_experiment.py 后覆盖模块属性（SYSTEM_PROMPT/COMPACTOR），共享管线零改动、checkpoint 续跑天然可用。
+
+**任务书笔误**：§0 括号「真值只在 R1 声明一次」是 hold 臂描述，data_d_repeat.json 实际=每轮 10 变体+真值重申（msg 13）。按 §2.2 点名文件执行，偏差入报告。
+
+**瞬时抖动（非回归）**：gcli2api judge 主通道 403 一次（ToS 提示文案，重试即恢复）；WorkBuddy compactor model_use_failed 2 次（重试成功）——既有重试机制全覆盖。
+
+<!-- 2026-10-05 17:37:47 -->
+## EXHAUSTED 停摆救援交付（任务书 F，2026-10-05）
+
+
+- 分支 `fix/compact-exhausted-rescue-1005` @ `b1a2266c`（C1 `959dfe96` 救援行为 / C3 `b1a2266c` 日志段），CI run 37289317688 绿，head_sha 已核对。停在分支，未合并。报告：`/var/minis/shared/work/compact-exhausted-rescue-1005/REPORT.md`。
+- C0 结论：**tokens=provider 真值**（真机日志 03:30 同轮 prompt_tokens=293185 vs 决策 292822，Δ=363=offload 估算基准修正；OpenAIProvider latestContextTokens=prompt_tokens 原样）；EXHAUSTED「禁止压缩」是 81dd981c（08-12 T5）原始形态，动机=防空重试墙，55703df9 只改 KDoc。
+- 设计定式（可复用）：**decide() 这类纯函数加调用方状态门时，缺省值必须保守（true=旧行为）**——legacy 测试断言零改动通过 + 变异负控（删新分支→新测试红/legacy 绿）双实证。
+- 语义教训：给 EXHAUSTED 早退分支加救援时，别叠加防抖/尾门——闸门是为压缩线以下常规路径设计的，救援一次性门本身即防风暴；叠加会吃掉唯一机会。10-05 七次 EXHAUSTED tail 8632-17637 全高于 8000 尾门，实证零影响。
+- C1/C3 分 commit 的实操：备份 C3 完整文件 → 编辑回 C1 中间态 → JVM 验证 → commit → 恢复备份 → 再验证再 commit。
+- 坑：**gh_ci_wait.sh --expect 必须从 `git rev-parse HEAD` 取完整 sha**，手抄尾段错了会按假绿判据空转到超时（本轮 900s 白等，run 本身是绿的）；git diff main...HEAD 在共享 clone 里本地 main ref 可能过期，核对分支 diff 一律用 origin/main。
+- ChatContextWindowExt.kt 拖 ChatViewModel 全家进 JVM harness 不可行（宿主依赖爆炸）；接线断言用 CompactTelemetryTest 的 readRepoFile 源码片段模式（纯文本读取不编译），模拟 repo 树放 app/src/main/java/... 相对路径即可。
+
+<!-- 2026-10-05 17:41:30 -->
+## 压缩三任务收口（10-05 主会话独立核验，用户令「结果都出来了」）
+
+
+**核验（三源全过）**：①CI run 37284048540（E）/37289317688（F）均 success，head_sha 与分支 tip 逐字符一致（bridge+API+ls-remote）；②diff vs origin/main：E=3 文件 +442/−3（CompactPin.kt 173/ChatSessionLifecycle +29−3/CompactPinTest 243）、F=6 文件 +389/−6，与交付报告完全一致，0 冲突标记，无夹带；③main 未动（9305371，无自动合并）。G 零代码，REPORT_REGRESS.md 判定 PASS。
+
+**结果摘要**：G=SUPERSEDED 条款 PASS（100/100 行为分、负控 0/10；附带 summary 反膨胀 R10 差 ~50%）；E=pin v0 交付（15 测试含 3 轮 round-trip byte-identical）；F=EXHAUSTED 救援交付（C0 结论：tokens=provider 真值 Δ363、意图=防空重试墙；Decision.RESCUE+缺省保守门+三复位接线）。
+
+**合并注意**：E 和 F 都碰 ChatSessionLifecycle.kt（E=重写链 :788 区、F=救援接线区，不同区域预计可自动合并，但合并第二个时必须查冲突）；E/F 语义正交（救援触发压缩、pin 作用于任何压缩）。
+
+**环境修复**：共享 clone 的 main 引用曾过期在 4f40e4a（今天咬了两次 diff 核对）；rk-sched-1004 worktree 干净，已 ff 更新到 9305371。坑已登记：核对分支 diff 一律用 origin/main。
+
+**已知未验证（用户侧）**：E/F 真机冒烟（装 CI 产物：E 验两轮压缩后 `[pinned-user-messages]` 与 user 原文逐字一致；F 验超窗长任务 rescue=attempted→SUCCESS→后续 blocked→用户动作后可再救）；F 的救援成功率未知（fallback 在位，高频 failed 时走「只 fold 未覆盖区」降级，需再立项）。
+
+<!-- 2026-10-05 18:35:20 -->
+## 压缩体系 E/F 两分支核查并合并 main（10-05，用户令「检查，没问题就合并，有问题就改」）
+
+
+**结果**：两分支均通过 6.5 全套 8 项核查 → 合并 main，main CI 绿。
+
+**核查对象**：E=`feat/compact-pin-v0-1005`@502f70ef（pin v0，3 文件 +442/−3）；F=`fix/compact-exhausted-rescue-1005`@b1a2266c（EXHAUSTED 救援，6 文件 +389/−6）。
+
+**8 项核查（两分支各跑）**：
+- 机械项（verify_branch.sh）：scan 20/20、i18n AUTO-SKIP、scan_debt 0 no-trigger、four-way「All four layers consistent」、冲突标记 0 —— 两分支全过。
+- CI head_sha 逐字符：E run 37284048540 @502f70ef ✓；F run 37289317688 @b1a2266c ✓（bridge + API 双源）。
+- diff 全读：E 487 行 / F 515 行逐行读完。
+- 调用点：E 4 个新符号各有 def+import+call；F `rescueAttemptedForCompact` 7 处（def+6 用点）、`ContextCompactor.decide` 两个调用点（loop 路径传新参、非 loop 路径 `:193` 刻意不传=默认 true 旧行为）、`ContextGrowthTrackerTest` 的 `when` 有 `else` 不破。
+- 独立证据（项 7）：自建 JVM harness 对**合并树**跑两测试类 → E CompactPinTest 15/15、F CompactExhaustedRescueTest 10/10（非 CI 独立源）。
+
+**发现问题并修（1 处）**：F 的 ContextCompactor.kt 有两处**行连接瑕疵**（换行被吃：`}        // 单一事实源` 和 `*/    val COMPACT_SUMMARY_SYSTEM_PROMPT`）。纯格式、零行为。在 F 分支修掉 → 新提交 `efa1be15`（+4/−2 纯空白）→ 推送 → CI 重跑绿（run 37293664294 @efa1be15）。
+
+**合并**：两分支对 main 零冲突（ChatSessionLifecycle.kt 双改不同区域自动合并）。基于 origin/main(93053711) 依次 `--no-ff` merge E→F。合并 diff = E∪F 精确（830 ins = 442+388，ChatSessionLifecycle 36=29+7），零夹带。refspec 直推 `git push origin merge-test:main` → main=**6f357dc8**。main CI run 37295753950 success @6f357dc8（bridge+API），产物 RikkaMinis-apk 12.7MB。
+
+**清理**：远端 E/F 已删（gh_sync delete-branches --keep main，detached 下报「4 failures」= 已知假 FAIL，ls-remote 真值确认只剩 main）；本地 E/F/merge-test 三支已删；主 clone detached @origin/main；rk-sched-1004 worktree ff 到 6f357dc8。
+
+**待用户真机验证（未变）**：E 验两轮压缩后 `[pinned-user-messages]` 与 user 原文逐字一致；F 验救援=attempted→SUCCEEDED/FAILED→blocked→用户动作后可再救。
+
+**技巧**：①JVM harness 跑 F 的 CompactExhaustedRescueTest 必须 cwd=Gradle 模块目录 `src/android/app`（其父 `src/android` 下才有 `app/src/main/...`），否则 readRepoFile 全 4 红——是装置配置错不是代码 bug；②依赖链 ContextCompactor→ContextPolicy/AgentContentPart/LLMMessage/LLMUsage，LLMUsage 带 @Serializable 需 `-Xplugin=kotlinx-serialization-compiler-plugin.jar` + 两个 serialization jar。
+
+<!-- 2026-10-05 19:26:48 -->
+## 新包（6f357dc8）运行时验证巡检结果（10-05 19:20）
+
+
+**前提确认**：18:37 装包波后当前 build=main 终态 6f357dc8（C+D+E+F 全量），本会话（pid 13325）即跑在该包上；rk-sched-1004 worktree 逐字符核对一致。
+
+**运行时证据（真机日志直接验证）**：
+- ✅ D-A 遥测：10:52/10:58/15:42/15:59 四次真实压缩 SUCCESS 行均带 `chars=/outTok=`（格式与 D 交付 probe 逐字段吻合），10:52 起首次出现 → 当时 build 已含 D（10:07 合并）。D-A 运行时验证成立。
+- ✅ C-B 的失败实锤（旧包）：07:24 `summary TIMEOUT after 30001ms (budget 30000ms) candidate=1/1 (active GLM-5.3-Flash)` + 07:43 安静时 7256ms 成功——正是 C-B 针对的故障对。新包上同类事件应显示 budget 60000ms，等自然复现。
+- ✅ EXHAUSTED 实锤（旧包）：03:30–07:37 多次 skip，峰值 tokens=306888 vs window=220000 → F 修复的对象；新包装后零 EXHAUSTED 事件。
+
+**无法直接验证（结构性）**：E pin / D-B 条款 / C-A 守卫 / F rescue 都需要新包上发生一次压缩或超窗；18:37 重装后零压缩、零 EXHAUSTED（会话未到压缩线）。modelservice 日志不落 system prompt（条款请求侧证据拿不到）；/data/app 路径未挂进沙箱（APK 二进制字符串核对不可行，已试）。
+
+**新发现（待拍板是否登记 defect）**：16:16–17:41（旧包）`effectiveAgentHistory v2: anchorId=ab12b1c2 not in agentHistory — degrading to full history (no summary)` 连发 25+ 次（historySize 85→123 单调增）——budget anchor 引用失效后未清理，预算锚机制在该会话持续退化。18:37 新包后未复发，但样本不足不能确证自愈。
+
+<!-- 2026-10-05 19:38:53 -->
+## 底子盘点数据：fork vs 上游 OpenMinis（10-05 实测，二次开发视角）
+
+
+- 上游参照 = openminis-ref 快照 @ v1.14（b4c0661，2026-09-29，单 commit 快照仓）；fork 基线 = 上游 v1.10 @ e488b1b1（2026-07-25），package rename 741 文件，血缘记录在 docs/ARCHITECTURE.md + docs/SYNCING_UPSTREAM.md。
+- 规模：fork 908 kt 文件 / 256,606 行 / 310 测试文件 / 3879 @Test；上游快照 1015 kt / 301,238 行 / 4005 @Test。上游非空架：有 auto-compact 雏形（AutoCompactPrefs+ChatViewModel 接线，无独立 compactor 模块）、offload(13)/scheduled(10) 均存在。
+- 关键分化：fork 独有 conversation/ 包（ContextCompactor 等 544 行，上游无此模块形态）+ fastio（17 文件，上游 0）；上游 scheduled(10 文件) 比 fork L0(4 文件) 更厚 → 同一功能区两侧平行演化，merge 热点 = ChatViewModel/ChatScreen。
+- fork 33 顶层包四大域（09-28 盘点仍有效：对话AI核心~150 / UI 197 / Agent执行面~115 / 系统支撑~90 文件）。
+- 结论口径：fork ≠ 上游超集，是「同骨架、执行层和可靠性层分叉」——上游继续横向加功能，fork 纵向做实验驱动的可靠性（压缩体系/SOP/静态门禁）。
+
+<!-- 2026-10-05 19:53:00 -->
+## 代码膨胀实测（10-05，基线=包名改名点 e24ca02b 09-10）
+
+
+- 测量坑两个：①浅仓 graft 假象（fastio/quiet-first 等 merge 节点被当根，numstat 把整树算新增——jieba +69万行的假数据），已 `git fetch --unshallow` 补全（1478 commits，昨天遗留待办闭环）；②09-10 包名 rename 切断文件历史（com/openminis→com/rikkaminis），膨胀必须以 e24ca02b 为基线 diff 当前路径。
+- 总账（25 天）：main kt +31,952/−5,351=净 +26,601（169.0K→195.6K，+15.7%）；测试 +18,962/−184=净 +18,778（39.7K→58.4K，+47%，测试占总净增 41%）；新增文件 83、删 3、改 255。测试:代码比 0.235→0.30。
+- 头部增长（当前路径）：FastioOffloadHandler +1258 / FastioTar +902（全新模块）；老文件变胖最快的 = ChatSessionLifecycle 1494→1952(+31%)、AgentLoopEngine 2639→3206(+21%)、OpenAIProvider +15%、ChatViewModel 3673→4165(+13%)、ChatScreen 4836→5194(+7%)、ModelExecutionService +14%。
+- 性质判定：增长大头是新模块（fastio 族/diagnostics/scheduled/accessibility/policy 纯函数），热点 6 文件增速与整体同步（+14.8% vs +15.7%）无失控集中；jieba 词典 34.9 万行是上游初始提交自带非本仓膨胀；dev-history 档案周增 ~2.5K 行（有意为之）。
+
+<!-- 2026-10-05 19:57:38 -->
+## 五大文件拆分评估（10-05，二次开发视角，基线数据实测）
+
+
+- 热度（25d commits / 7d / churn行）：ChatSessionLifecycle 33/10/808（唯一近期高热）；ChatViewModel 37/6/604；ChatScreen 33/0/1080；AgentLoopEngine 26/1/679；StreamingMarkdownText 12/0/261。
+- 引用面：ChatViewModel 89 文件引用（hub）；ChatScreen 56；StreamingMarkdownText 14；AgentLoopEngine 13；ChatSessionLifecycle 仅 5。
+- 测试按路径 pin：ChatSessionLifecycle 6 个测试文件（最多）、ChatViewModel 4、SMT 1、其余 0——拆 SessionLifecycle 需机械更新 pin 路径（自验证）。
+- 结构真相：ChatSessionLifecycle=13 个 ChatViewModel 扩展函数+4 纯函数（compactAll 463 行/effectiveAgentHistory 526 行/loadSession 654 行/尾段 197 行），是 ViewModel 的物理分身，名字与内容已不符（compression 占 55%）；AgentLoopEngine=单 class ~3100 行体（真 god-class）；ChatViewModel=1 类 33 成员函数；SMT=82 个顶层声明（模块假装成单文件）。
+- 判定：①ChatSessionLifecycle 值得拆（CompactSession 抽出，条件最成熟）但避开本周合并余波；②AgentLoopEngine 值得拆但先建 harness 脚手架立项；③ChatViewModel 不拆类本体，继续扩展函数文件模式（已验证）；④ChatScreen/SMT 不急（低频/机械活）。
+- 范式参照：conversation/ContextCompactor.kt（544 行纯函数+实验验证）就是拆对的样板——方向=把编排逻辑从 ViewModel 空间持续迁往 conversation/ 纯函数。
+
+<!-- 2026-10-05 20:05:41 -->
+## 任务书 H 派发就绪 + 拆分策略登记（10-05）
+
+
+- 任务书 H 已写好待手动派发：`/var/minis/shared/work/task-brief-1005-H-compact-orchestration-split.md`——ChatSessionLifecycle 拆分，迁 compactAll(:53-515)/生成链(:792-1041)/4 纯函数(:1042-1101) → 新 conversation/CompactOrchestration.kt，零行为变更，保留段清单+6 测试 pin 更新清单+三源验证全在书内。锚点已逐行核实 @ 6f357dc8。
+- 关键预判（写入任务书）：compactAll 调用点全在 ui/chat 同包（5 处）→ 仅跨包 import 机械改动；AgentLoopHost:48 接口链 + ChatViewModel:1266 override 是不动红线；effectiveAgentHistory 不拆（会话装配语义）。
+- 派发门槛：E/F 真机冒烟完成后开工（避免合并余波叠加），时机用户定。
+- 未出任务书的中期项（backlog 性质）：AgentLoopEngine（3206 行真 god-class）拆分前置条件 = 先建 JVM 行为基线 harness（变异负控法）再动刀；ChatViewModel 纪律 = 冻结生长、新行为一律扩展函数文件或 conversation/ 纯函数。
+
+<!-- 2026-10-05 21:24:05 -->
+## H 执行会话压缩实证 + 预算判定核实（10-05 晚，新包 6f357dc8）
+
+
+- 新包首次完整压缩 ×2（20:59 / 21:08，H 执行会话触发）：候选链 1/4 glm-5.3-flash 30s 超时 → 2/4 deepseek 30s 超时 → 3/4 fallback deepseek 7.5-7.9s SUCCESS，chars=3353/3812 outTok=1498/1511——候选链/回退/D 遥测在新包实测工作。无 TRUNCATED/EXHAUSTED/RESCUE 事件（未触发）。
+- E pin 空路径验证 ✓：两次 fold 区 userTextTurns=0（纯工具轮）→ 摘要无 pin 段（空结果不加段=设计行为）。非空路径（真 pin 段落日志）仍待 userTextTurns>0 的压缩。
+- C-B 预算非 bug：压缩链 glm-5.3-flash entry declared=low|high → declaresNoEffortTiers=false → 30s 按规格执行；60s 保留给 declaresNoEffortTiers=true 模型（如大写 GLM-5.3-Flash declared=null→true）。**backlog 候选**：该 entry 实测恰是 30s 卡死者（5 次 30001ms），与 C-B 目标画像吻合但 flags 不匹配——可考虑 entry 级预算覆盖。
+- 日志观察：超时候选的 result written 会迟到落盘（client 已放弃、provider 层照写，如 21:08:28 glm），无害。
+- 摘要全文可验证通道确认：ModelExecService `result written` 打压缩摘要全文进 modelservice 日志（line 250874/251626...）——H 会话摘要内可见其进度：worktree rk-split-1005、分支 refactor/compact-orchestration-split-1005、基线 6f357dc8、锚点复核进行中。
+- D-B 条款：本批摘要无「最终生效/曾为」特征词；条款属许可型 prompt，无特征词≠未生效，运行时验证仍属弱证据（请求侧不落日志），实验侧 G 已 PASS。
+
+<!-- 2026-10-05 22:01:59 -->
+## 任务书 H 交付：ChatSessionLifecycle 拆分完成，分支 CI 绿（10-05）
+
+
+- **结果**：`refactor/compact-orchestration-split-1005` @ `68f83ee6`（2 commits：39e44822 拆分 + 68f83ee6 import 修复），CI run #1928 success，head_sha 逐字符一致。停在分支，合并权在用户。报告：`/var/minis/shared/work/split-h-1005/REPORT.md`。
+- **变更**：新 conversation/CompactOrchestration.kt（843 行 = compactAll+生成链+4 纯函数）；ChatSessionLifecycle 1952→1168；3 调用方 +1 import；5 测试文件 pin 更新。零行为变更。
+- **验证**：块 hash 双向（A=d9efad2830de/B=7671abaee695）、kept 段与 HEAD 逐字节、JVM harness 72 tests OK（6 类，真实文件+锚定提取）、CI 全量绿。
+- **CI 抓到的漏报（重要教训）**：拆分脚本的 receiver 语法解析缺陷——`fun LLMMessage.isToolResultOnly()` 的**名字**没进 decls（receiver 名被误捕为声明名），导致 2 个 receiver 扩展 import 漏掉。本地 harness 只编译纯函数块没覆盖到，CI 全量编译抓到。**根因教训：做自动 import 分析时，receiver 扩展声明必须取 dot 后的名字；且"只编译被测函数块"的 harness 无法发现主体代码的引用缺失——引用面分析必须对整文件做。**
+- **鬼打墙自检（用户点名）**：同一批核查（残留 pin/fixture/插件）重复做了 3-4 轮才推进——根因是上下文压缩后每轮重建状态且不信任已验证结论。以后：核查过的结论直接写进状态快照（"已确认"清单），不重跑。
+- **登记不做**：ChatModels.kt:418/:408 行号指针迁移前已漂移（P2）；QuietFirst/SilentCompact/CompactionLogic 三测试类未进本地 harness（CI 覆盖，测的是未触碰代码）。
+
+<!-- 2026-10-05 22:02:07 -->
+## 21:32 压缩失败事件还原 + ponytail 天花板命中（10-05 晚）
+
+
+- 时间线：20:59/21:08/21:27 三轮压缩全成功（链=1/4→3/4 fallback，active=大写 GLM-5.3-Flash XHIGH）。**21:31:07 用户在 H 会话（9b689468）开 ModelPicker → 21:31:13 switchModelAndRerun 切到小写 glm-5.3-flash**（三条 stream CANCEL=切换取消，非故障）→ 21:32:21 自动压缩触发（tokens=154756 超线）→ **链缩成 1/1（仅 active）** → glm 30s 超时 → 全链尽 → 压缩失败。
+- 直接原因实锤：fallback 链空（buildFallbackProviders 返回空 → chain=1+0）。分叉未裁决：_selectedGroupId 被切换清空 vs 其他成员被 isUsable 过滤——窗口内零 429/5xx/401（排除冷却/熔断路径），倾向前者但日志证据不足。
+- **兜底路径首次真机验证 ✓**：typed throw → `Compact failed` WARN → `folded nothing — keeping hard trim enabled` → 会话零中断继续（21:34 仍在跑 H 任务工具）。失败是优雅的。
+- **★ ponytail 升级触发命中（登记 backlog）**：小写 glm-5.3-flash（tierflow entry 0df664ef，declared=low|high|max→quiet 分区）在压缩任务上 **5/5 TIMEOUT**（20:58×2、21:08、21:27、21:32 全部 30001ms）——catalog 标了 effort tiers 但实际 30s 内从不出活，正是 ChatModelRouting.kt ponytail 注释预言的「同一未标成员反复 TIMEOUT → 加本地覆盖名单」。修法：entry 级本地覆盖（视为 noisy → 60s 预算+垫底）。
+- H 会话风险：active=小写 glm + fallback 空 → 下次压缩大概率再失败 → hard trim 循环丢早期工具结果（F 兜 EXHAUSTED 不停摆）。建议在 H 会话换回多成员群组或 deepseek 作 active。窗口内 CANCEL 不降级成员（AgentLoopEngine:1415 仅 429/5xx/401）——设计正确。
+
+<!-- 2026-10-05 22:06:04 -->
+## backlog 新增：压缩候选链 entry 级预算覆盖（10-05 晚，用户拍板「先攒着」）
+
+
+- **触发依据（已满足升级条件）**：小写 glm-5.3-flash（tierflow entry 0df664ef，declared=low|high|max → quiet 分区→30s 预算）在压缩摘要任务上 **5/5 TIMEOUT**（20:58:46 / 20:59:16 / 21:08:01 / 21:27:08 / 21:32:51 全部 30001ms，安静时 7s 能完成）——正是 ChatModelRouting.kt ponytail 注释预言的「同一未标成员反复 TIMEOUT → 加本地覆盖名单」，天花板已实测命中。
+- **修法（很小）**：entry 级本地覆盖名单——连续 N 次（建议 N=2）TIMEOUT 的 entry 自动/手动标记为 noisy → 压缩链里 60s 预算 + 排序垫底（与 ordersCompactionCandidates 的 noisy 分区同路径）。落点候选：LLMModel.declaresNoEffortTiers 之上的 runtime override，或 GroupRouter health 附带压缩画像。纯函数核心 JVM 可测，对齐 C-B 交付模式。
+- **注意（设计坑）**：ordersCompactionCandidates 分区判据 = `declaresNoEffortTiers != true`（null 也算 quiet），override 只该影响预算与排序，**不要去改写 declaresNoEffortTiers 本身**（它是 catalog 语义，会被 ThinkingRuleResolver 等他处消费，改写有跨域副作用）。
+- **伴随观察（同批攒着，未立项）**：切单模型/非群组目标后 buildFallbackProviders 返回空 → 压缩链只剩 active（21:32 失败的直接原因）。可考虑「fallback 空时警告」或「压缩前校验群组上下文」，与上面同属压缩鲁棒性小项，合并立项或分开均可。
+- 排序：压在 backlog 后部（用户口径「看起来很小，先攒着」），不设 deadline；升级触发再来时（如 H 类长跑会话被此卡住）提前。
+
+<!-- 2026-10-05 22:43:15 -->
+## H 分支核查并合并 main（10-05 晚，用户令「检查+有问题修+没问题合并」）
+
+
+**对象**：`refactor/compact-orchestration-split-1005` @ `68f83ee6`（ChatSessionLifecycle 拆分 CompactOrchestration，2 commits）。
+
+**核查 8 项全过**：机械捆绑（scan 20/20、i18n AUTO-SKIP、scan_debt 0、four-way ✓、冲突 0、CI 37319334171 verified @68f83ee6 逐字符）；diff 1797 行全读（无夹带/无调试残留）；7 符号调用点全甄别（compactAll 6 处真实调用 = ChatContextWindowExt×2/ChatSlashTokenExt×1/ChatViewModel×3 全接线；测试 4 文件已 import）。
+**独立证据**：①字节保真复核 783/783 行逐行一致，唯一差异 = 段落尾部 1 空行（无行为）；②JVM harness 重放 **72 tests OK**（在 68f83ee6 内容上重新组装+编译+重跑，6 类）。
+
+**装置修正（split-h-1005/harness/assemble.sh，2 处——原装置在最终 tip 上不可重放）**：①静态锚 783-841 → 动态锚（68f83ee6 的 +2 import 使区块漂移 785-843，静态锚重放必 ANCHOR FAIL）；②补 queueDrain 谓词提取步（原 _qf.txt 为手工所得，脚本缺步→重放必 unresolved）。⇒ 报告「72 tests OK」原时点实为 39e44822（21:37 组装）；本次在最终 tip 补了重放。
+
+**合并**：`--no-ff` → **1488bb94**（合并树 == 分支树 364e4227 逐字符；merge diff 10 文件 +858/−792 精确）；push ff `6f357dc8..1488bb94`；**CI run #1929 success** @1488bb94（bridge+API 双源；artifact RikkaMinis-apk 12MB）。
+**清理**：远端分支删（ls-remote 仅剩 main）；rk-split-1005 worktree 移除；本地分支删。
+
+**登记**：§60 verify_branch.sh 不支持 worktree（.git 文件形态被 [ -d ] 拒，绕过=主 clone）；§61 gh_ci_wait main 列表查询抖动（间歇不含新 run → 「no matching」循环至 timeout 891s 白等；run 实际已 success——run-id 直查 + bridge 可即时拿结论）；§62 CompactOrchestration.kt 同包冗余 import ×5（P2 清理类）。
+
+**可复用教训**：①核查目标在 worktree 上时，机械捆绑用主 clone 代跑（verify_branch 只认 .git 目录）；②等 main CI 超时 ≠ 失败——先 bridge + run-id 直查再判；③静态行号锚的装置随内容漂移即失效（+2 行 import 即挂）——装置锚要动态（符号定位+断言）。
+
+<!-- 2026-10-05 23:05:25 -->
+## 压缩专用模型组分析（用户问「是否有必要给自动压缩专门开一个模型组/专用模型」）：
+
+**压缩专用模型组分析（用户问「是否有必要给自动压缩专门开一个模型组/专用模型」）**：
+- 结论：**不立项独立压缩模型组**（与 GroupRouter 平行的第二套拓扑，一阶门不过），登记 backlog §63，升级触发 = 第二个 entry 出现同族 TIMEOUT（或用户显式要手工指定）。
+- 现机制已对「压缩模型冲突」免疫三层：quiet-first 排序（declaresNoEffortTiers 分区，关不掉思考的垫底）、30s/60s 分层预算+120s 链死线、stopReason=length 截断拦截。**真正缺口 = catalog 元数据陈旧**（glm-5.3-flash tierflow entry 0df664ef：declared=low|high|max 判 quiet，实际 5/5 TIMEOUT）——修数据/加 entry 级 override 即可，不需要新拓扑。
+- 独立组的反论：切断与聊天成员健康视图的耦合（成员被禁用/冷却后压缩链不知情 → 复刻 fallback 空→1/1 失败成因，即 21:32 事件根因）；多一套绑定/切换/UI/token 计费的边要养（二阶门）。
+- 若将来做：方案 B 手工压缩画像（compactionEntryId prepend 进现有链，链尾沿用现有 fallback+过滤）优于方案 A entry 级 noisy 自动 override（N=2 连续 TIMEOUT 垫底+60s，注意不改写 declaresNoEffortTiers 本身）。
+- sendVia 不写 GroupRouter 健康（10-03 设计决策，注释在 CompactOrchestration.kt:664 附近）——任何压缩画像方案都别破坏这条边界。
+
+## 2026-10-06
+
+<!-- 2026-10-06 00:42:14 -->
+## 压缩模型钉住功能施工完成（feat/compact-model-pin-1005 @ bba87f23，CI 绿，停在分
+
+**压缩模型钉住功能施工完成（feat/compact-model-pin-1005 @ bba87f23，CI 绿，停在分支待用户）**
+
+- **交付**：全局「压缩模型」设置——钉住的 entry 骑压缩候选链首，两种选择模式都生效（组内成员走 buildFallbackProviders 候选匹配；组外/单选模式走全局 entryId 解析，同款 enabled/key/factory 过滤）。失效静默回落旧链（一行 INFO）；pin==active 时用户显式选择压过 quiet-first 降序。预算/120s 死线/截断拦截/不写健康状态四不变。
+- **文件**：AgentRuntimeLimitsPrefs（key/cached/prime/reader/save 五处同族）+ ConfigBuiltins（runtime.compactModelEntryId，备份+minis-config）+ ChatModelRouting.prependCompactionPin（纯函数，resolvePin 注入保 JVM 可测）+ CompactOrchestration 调用点 + resolveCompactionPinProvider 扩展 + RuntimeLimitsScreen 选择行/对话框（7 i18n key ×7 语言）+ CompactModelPinTest 13 用例。
+- **验证**：本地 JVM harness 13 tests OK（锚定抽取+单次编译）；变异负控 ✓（pin 逻辑打掉→6 红，其余 7 绿）；scan.sh 20 门全过；scan_debt 0；i18n 7×7；CI run 37340865213 success @ bba87f23 head_sha 逐字符一致。
+- **CI 首轮红教训（同族第 2 次，H 分支 10-05 同款）**：调用点漏加新函数 import——K2 把 unresolved 报成 run 块类型推断塌陷（706-709 "Cannot infer type"），不报 unresolved reference，极具迷惑性。**新符号跨文件使用，import 与函数同 commit 加**；JVM harness 抓不到（独立编译上下文），这类只能 CI 或全文件 import 对照抓。
+- **装置坑**：抽取器把默认参数 `= { null }` 的 lambda 花括号当函数体起点→提前截断；先跳参数括号再找 body。StubProvider 各测试文件私有，新文件自带（CompactPinStubProvider）。
+- **待真机（用户验证清单）**：设置页新行出现/选择持久化/选 deepseek 后压缩日志 candidate=1/N entry=deepseek/删提供商显示⚠已失效且压缩回落/runtime.compactModelEntryId 进备份。
+
+<!-- 2026-10-06 01:28:39 -->
+## 压缩模型 pin 分支（feat/compact-model-pin-1005）审查+修复+合并 main 完成（10-06 凌晨）
+
+
+- **审查发现 2 缺陷（均修，commit f03b9a88）**：①`resolveCompactionPinProvider` 缺 `GroupRouter.isUsable` 健康门——冷却/熔断/死钥的 pin 走全局解析仍骑链首，与注释声称「the pin never bypasses a demoted member」「冷却/熔断它照样被过滤掉（刻意）」相悖（组内冷却成员会被 buildFallbackProviders 剔出 fallbacks 但被 resolve 拉回）。修法=入口加一行 isUsable（与 buildFallbackProviders 同款过滤）。②pin==activeEntryId 时 found 检查必 miss（active slot second==null 是契约）→「not reachable」INFO 误报；修法=found 加 `pinId == _activeEntryId.value ||` 条件。两处均配 source-text 测试（+2，共 15）。
+- **验证三轮（本次实跑，非引用）**：修复后 harness 15/15 绿；修复前树恰 2 红（新断言，检出灵敏度 ✓）；pin 逻辑变异（`val id = ""`）6 红 9 绿（钉点 ✓）。scan 20/20（修复后）；verify_branch.sh 全过 @f03b9a88（scan/i18n/scan_debt/four-way/冲突/CI 核验）。
+- **CI**：分支 run 37345147838 success @f03b9a88；main run 37346979629 success @b9497337（bridge+API 双源，head_sha 逐字符一致）。
+- **合并**：`--no-ff` → **b9497337**（parents=1488bb94+f03b9a88；合并树==分支树 identical；merge diff 13 files +709/−1 与分支增量精确吻合）；push-main 核验通过（1488bb94..b9497337）；delete-branches 清理（本地+远端仅剩 main）。
+- **环境坑（各记一跳）**：①`git checkout main` 被 10-04 遗留 worktree `rk-sched-1004`（HEAD=main）占用 → fatal；处理=对它 `checkout --detach` 让位（不删文件、不碰内容，保守方案）；以后主 clone 切分支前先 `git worktree list`。②`cmd | tail` 管道吞 git 退出码 → `&&` 链在错误分支上继续跑出「假成功」序列（假 MERGE identical）——靠 log 顶部 sha 察觉；关键 git 步骤不套管道，核对看操作后状态。③/tmp 清扫实测：pin-harness.sh（mtime 23:54，cp 保全不刷源 mtime）被收走；装置已迁 `/var/minis/shared/work/pin-preserve-1006/`（pin-harness-1006.sh=路径改装版 W=shared/work/pin-jvm-1006、round2/round3 验证脚本、commitmsg）。
+- **待真机（更新清单）**：原 5 项（设置行出现/持久化/deepseek candidate 日志/⚠失效回落/进备份）＋新增：a) pin==会话 active 时钉住领衔、压缩日志不再误报 not reachable；b) pin 的模型冷却中压缩回落旧链（此时一行 not reachable 是正确语义）。
+
+<!-- 2026-10-06 06:47:30 -->
+## 分支：ui/polish-1006 @ 05f31a0b（2 commits：79d5956c 三处 UI 改动 + 0
+
+**分支**：`ui/polish-1006` @ `05f31a0b`（2 commits：79d5956c 三处 UI 改动 + 05f31a0b 风格对齐），**CI run #1934 success，head_sha 逐字符一致，停在分支等用户**。改动：①压缩模型行整行 clickable 弹对话框、删「选择…」按钮行（7 语言孤儿键 `runtime_limits_compact_model_choose` 一并清）；②补 0.5dp 底部分隔线 + showDivider 参数（与 LimitsSliderRow 视觉对齐），删多余 TextAlign.End；③定时任务编辑页删提示词占位示例（7 语言 `scheduled_prompt_placeholder` 清零，placeholder 参数本就可选）；④设置页定时任务入口挪到「环境参数」与「运行时限制」之间（divider 归属随行移动）。
+**验证**：scan.sh 20/20（含 i18n/four-way）、括号配平 0、7 文件 XML 合法、grep 孤儿键归零；无 JVM 测试新增（纯 Compose UI 静态改动）。
+**背景（用户三个 UI 口味拍板，复用价值高）**：①设置行 = 整行可点弹对话框，不要行内独立按钮；②输入框不要"例如：…"式占位示例；③定时任务入口排在环境参数之下、运行时限制之上。后续 UI 改动直接照此惯例，不要再问。
+**同源问答**：用户问「定时任务不是砍掉了吗」——历史事实：f0ea4f4（8 月初）删的是 AlarmManager 版（-2400 行，国产 ROM 闹钟不可靠）；10-05 合并的 L0 是前台检查形态（零闹钟/零 WorkManager/零常驻），升级到闹钟版被 backlog §56 数据门挡住（错过窗口率 >30% 才评估）。「砍的是调度通道，不是定时任务能力」。
+
+<!-- 2026-10-06 07:14:12 -->
+## ui/polish-1006 审查+合并 main + main CI 绿（10-06 早，「检查+有问题修+没问题合并」指令）
+
+
+- **对象**：`ui/polish-1006` @05f31a0b（2 commits：①压缩模型行删「选择…」按钮→整行点击弹框；②与 LimitsSliderRow 风格对齐〔+分隔线/−textAlign〕；③定时任务编辑页删占位符〔7 语言全清〕；④设置页排序 env_vars→scheduled→runtime）。由并行会话（定时任务恢复与界面简化讨论）06:32 推送；**其 CI 触发后会话即结束，结论此前无人看过**——本会话为独立核查。
+- **核查 8 项全过**：bundle exit 0（scan 20/20、scan_debt 0、i18n 1558×7 CLEAN、four-way ✓、CI run 37383165414 @05f31a0b success 双源）；diff 251 行全读；调用点表 7 符号全甄别；独立证据=自写结构审计 audit.py **37/37**（divider byte-identical 285==285；字节托管 blob b4610809/abfaca54/08a015e0；点击改线 base/tip 对照）+ 诚实边界（纯 UI 沙箱不可渲染→真机清单 5 项）。
+- **合并**：`--no-ff` → **02c7fb66**（parents b9497337+05f31a0b；merge tree==branch tree 0 文件差；增量 10 文件 +27/−36 精确吻合）；push b9497337..02c7fb66；main CI run **37385109044** @02c7fb66 success（bridge+API 双源）；delete-branches --keep main --yes → 本地/远端仅剩 main。
+- **新坑×2（陷阱库§六+LEARNINGS 已登记）**：①**合并后 bundle 重跑撞 base 漂移陷阱**——默认基线 origin/main 已=合并提交→分支 vs 新 main 零差异触发零差异守卫 FAIL（正确 fail-closed）+ /tmp 材料被覆盖；归档应在合并前 tee、合并后复现须显式 base+分支树（`verify_bundle.sh <repo> <branch> <base>`）。②自研审计脚本首跑 4 红全为期望值误报（git grep -l 含调用方 .kt→7 应为 8；count 子串撞 `_subtitle`；`find(x,find(x)+1)` 取到定义非调用点）——FAIL 先过期望值三件套。
+- **装置**：`shared/work/verify-ui-polish-1006/`（audit.py、audit-output.txt、branch.diff〔251行〕、scan.log、verify-bundle-output.txt〔显式 base 复现快照 23:11Z〕、verify-bundle-postmerge-rerun.txt〔陷阱记录〕、REPORT.md）。
+- **待真机（用户清单）**：①整行点击弹框；②行分隔线与滑杆行一致；③对话框交互（搜索/跟随会话/选择/清除）；④编辑页无灰色占位符但标签仍在；⑤设置项顺序 环境参数→定时任务→运行时限制。
+
+<!-- 2026-10-06 08:00:27 -->
+## 定时任务"无法删除"修复（用户报告 → 根因+修复+分支 CI 绿，10-06 早）
+
+
+- **症状**：用户报告「新加的那个定时任务怎么不能删除啊？」（07:42 新会话，"无法删除新增定时任务"）。
+- **根因（实锤）**：`ScheduledTaskEditScreen` 删除确认对话框 + `ScheduledTasksStore.deleteTask`（含运行中清理）+ 导航层注释（AppNavigation.kt:1098 "destructive delete confirm"）全部就绪，**唯独没有任何 UI 触发点把 `showDeleteConfirm` 置 true**；列表行只进编辑页（无 swipe/menu）。`git log -S "showDeleteConfirm = true" --all` 全历史零命中（自 9f9bb630 施工起从未存在）——**施工遗漏，非回归**。
+- **修复**：`fix/scheduled-task-delete-1006` @ `273aecc6`（+20 行）：编辑页底部加红色删除按钮（仅已有任务；ProviderDetailScreen 模式：error container + 确认对话框）。CI run **37390320980 success** @273aecc6（bridge+API 双源，head_sha 逐字符一致）。**停在分支，合并权在用户**。
+- **同族扫描（新脚本模式，可复用）**：扫全项目 `var X by remember{ mutableStateOf(false) }` 形态 127 个状态变量，判"声明 false、无任何 =true/切换赋值"→ 4 候选细查全为表达式赋值误报 → **死对话框全项目仅此一例**。rememberSaveable 形态、`var x = remember{...}.value` 形态各零命中。
+- **盲区反思**：真机清单（10-04 施工七项）没覆盖"删除任务"——UI 入口缺失=死功能，测试只测纯逻辑、CI 只保编译，只有人肉走到才看得见。施工收尾的真机清单应含**每个破坏性/管理动作**（增删改查各一）。
+- **待办**：用户真机验证（进编辑页→底部红色删除→确认→列表消失；新建页无删除按钮）+ 合并决定。
+
+<!-- 2026-10-06 08:22:25 -->
+## fix/scheduled-task-delete-1006 核查+合并 main（10-06 晚，「检查+有问题修+没问题合并」指令）
+
+
+- **对象**：`fix/scheduled-task-delete-1006` @ 273aecc6（1 commit，单文件 ScheduledTaskEditScreen.kt +20/−0：编辑页 Save 下新增红色删除按钮，`if(!isNew)` 显示，置 `showDeleteConfirm=true`）。**本质=激活 main 上的死代码**：对话框（含 deleteTask+onDone）早已存在但 main 树 `=true` 写入点为 0（无 UI 入口），本分支补唯一按钮。
+- **核查 8 项全过**：scan 20/20、four-way ✓、冲突 0、scan_debt 0、i18n 真跳过（只用既有键 common_delete 7/7 语言）、CI run 37390320980 @273aecc6 success head_sha 逐字符一致（bridge+API 双源）；独立证据=自写对照审计 audit.py **10/10**（main 写入点 0→分支 1；isNew 守卫/Save 位置/deleteTask+onDone 字面/error container/纯增量 removed=0）；调用点甄别：MinisButton 有 colors 参数（ProviderDetailScreen L366-379 同族先例，注释声称属实）、deleteTask UI 唯一调用点（列表页无删除路径，"missing delete entry" 属实）、删 running 任务时 store 清 `running=null`（ScheduledTasksStore.kt:90-97）安全。
+- **合并**：`--no-ff` → **76c747af**（parents 02c7fb66+273aecc6；merge tree==branch tree IDENTICAL；+20 精确吻合）；push 核验 remote=local；main CI run **37392071022** @76c747af success（head_sha 全串逐字符一致）；delete-branches --keep main --yes → 本地/远端仅剩 main。
+- **新坑（陷阱库§六新行 + backlog §64 登记，P1）**：**浅克隆首跑 verify_branch.sh → 三点 diff 静默空 → 假跳过**——`-b <branch>` 浅克隆再 fetch main，两侧无共同历史 → `git diff A...B` 无 merge-base 报错、stderr 被 2>/dev/null 吞 → 落盘 diff 0 行 → 冲突/scan_debt/i18n 三项基于空 diff「机械成立」全是假的。兜住=手动两点 diff（`git diff origin/main HEAD`）发现 0 行；正确路径=补齐最小历史（`git fetch origin <branch> --depth 2` 使 merge-base=main tip）后重跑。与昨天 §56「合并后 base 漂移」是同文件近亲但断点层不同。**审查会话标准路径就是浅克隆 → 下次核查前先补历史**。
+- **装置自错×1（同族第 2 次值得警惕）**：audit.py 的 `find(x)` 取首次出现撞 L74 旧 `if(!isNew)` 块（文件里多处同模式）→ 守卫/位置 2 断言假红；修法=从 Save 文本之后定位。与昨天 audit.py 首跑 4 红同族：**期望值三件套（出现序/词边界/定位起点）先过再判缺陷**。
+- **待真机（4 项）**：①编辑页出现红色删除按钮（新建任务不出现）②点击弹确认框、取消不删 ③确认后任务消失并返回列表 ④删 running 任务运行标记清空、in-flight 不崩。
+- **报告**：`/var/minis/shared/work/review-sched-delete-1006/REPORT.md`。
 
 ---
 

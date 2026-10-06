@@ -939,8 +939,10 @@ internal data class CompactModelChoice(
 
 /**
  * Settings row + dialog for the pinned compaction model. Same visual
- * language as [LimitsSliderRow] (title/subtitle left, value right) with a
- * text button opening the chooser. The pinned VALUE is stored in local
+ * language as [LimitsSliderRow] (title/subtitle left, value right); the
+ * whole row is clickable and opens the chooser (no separate button —
+ * row-level click target matches the rest of the settings surfaces).
+ * The pinned VALUE is stored in local
  * state and persisted by the page Save button, like every knob here.
  *
  * A stale pin (entry deleted / provider removed) keeps its id and shows a
@@ -955,12 +957,14 @@ private fun CompactModelPickerRow(
     available: List<CompactModelChoice>,
     onPick: (String) -> Unit,
     onClear: () -> Unit,
+    showDivider: Boolean = true,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val pinned = available.firstOrNull { it.entryId == pinnedEntryId }
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { showDialog = true }
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(
@@ -991,16 +995,16 @@ private fun CompactModelPickerRow(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            MinisTextButton(onClick = { showDialog = true }) {
-                Text(stringResource(R.string.runtime_limits_compact_model_choose))
-            }
+        if (showDivider) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .height(0.5.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            )
         }
     }
     if (showDialog) {
