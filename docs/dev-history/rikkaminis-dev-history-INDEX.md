@@ -1,6 +1,6 @@
 # rikkaminis-dev-history 按天索引
 
-快速跳转到每日开发日志。共 1534 条记录，63 天。
+快速跳转到每日开发日志。共 1546 条记录，65 天。
 
 ## 2026-08-03（11 条）
 
@@ -3057,7 +3057,7 @@
 - `20:53` **签名：每次安装都要先卸载的根因（09-29 晚，已修，main f6196b8）**
   - **根因（两处独立证据）**：`build-debug.yaml` 的 `Signing properties` 步骤是三条 workflow 里**唯一被注释…
 
-## 2026-09-30（33 条）
+## 2026-09-30（31 条）
 
 - `06:39` **两个遗留全部处理完（09-30，main = f7053bc）**
   - **① 合并 PR #1**（`chore/rename-build-workflow` @ 58043a5）：`git merge --no-commit` …
@@ -3069,14 +3069,10 @@
   - - 三套 token 全部有效，且各自与配置的 ACCOUNT_ID 精确匹配（32 hex 逐字符 equal，非猜测）：`CF_API_TOKEN`(尾 0…
 - `12:10` **★ 部署事故：wrangler 覆盖式部署丢掉了 KV 绑定（09-30，自查发现）**
   - **用户质疑「之前那些不是自动继承下来吗」是对的**。***WORKER*** 三账号原本就是**完整配置好的**（ADMIN 密码、UUID、KV 绑定），我第一轮…
-- `12:31` **ClashPilot（ClashMetaForAndroid fork）全量修改验收（09-30 下午，四源取证）**
-  - **范围**：`559594d`（上游基线）→ main `34aca49`，**65 文件 / +7167 −112**。报告：`/var/minis/sha…
 - `12:31` **★ 沙箱怪癖：shell_execute 输出管道会吞掉「裸 null 行」（09-30 实证）**
   - **现象**：`printf 'a\nnull\nb\n'` → 输出只有 `a`、`b`；加 `| cat -A` 后正常显示 `null$`。
 - `12:45` **README 两处 P1 漂移已修（09-30，分支 `docs/fix-readme-drift` @ ad209a1，分支 CI 绿，**未合并**）**
   - **用户拍板**：「修了吧」（承接全量验收报告的两处 P1）。
-- `12:56` **★ 封存完成：ClashPilot（ClashMetaForAndroid fork）开发线收尾（09-30，main = 4cedebe）**
-  - **用户指令链**：「以最高规格检查一遍 → 计划没问题就封存」→ 报告两处 P1 文档漂移 → 「修了吧」→ 「合并」。
 - `13:42` **OpenMinis 上游调研（09-30，用户「看看有什么能抄的」）**
   - **上游仓库事实**：OpenMinis/OpenMinis = Minis 官方开源镜像（GPL-3.0，Swift+Kotlin 双端，4.8k star）…
 - `13:53` **A 档核查结论（09-30，用户「感觉眼熟，去核查一下」）—— 6 项里 1 剔除 / 1 改判 / 1 降级**
@@ -3167,7 +3163,7 @@
 - `17:12` **合并 fix/compact-quiet-first-1001 → main（10-01，用户放行「没有问题，那就合并吧」，merge 6361b410）**
   - **合并**：--no-ff merge **6361b410**（父 b4592399 + 4d1c9a25），合并树 vs 分支 tip 0 行差异，git…
 
-## 2026-10-02（14 条）
+## 2026-10-02（13 条）
 
 - `14:51` **自动压缩"双跑/停不掉/杠"诊断（10-02，未动手，待拍板）**
   - **用户报**：自动压缩失败时上面下面同时在跑、按暂停只停下面的、中间有条杠。
@@ -3193,51 +3189,9 @@
   - **shared 大清理（10-02，用户放行「就是处理一下吧」，5.1 G → 251 M）**：61 个已完成战役目录删除，81 份最终报告（REPORT/…
 - `22:12` **tall-1997/OpenMinis-Linux（Minis Ultra）第二次调查（10-02）**
   - # tall-1997/OpenMinis-Linux（Minis Ultra）第二次调查（10-02）
-- `23:55` **LEARN 边种子（方案 A）建成并验证 4/4（10-02，用户拍板「按你说的来」）**
-  - **装置**：`/var/minis/shared/work/learn-edge-seed/`（rules_index.py + index.json 245…
 
-## 2026-10-03（21 条）
+## 2026-10-03（1 条）
 
-- `00:01` **LEARN 边闭环：种子 + 接入 + 回填全部完成（10-02，用户拍板「按你说的推进」）**
-  - **canonical 位置（单一来源，work 目录不留副本）**：`/var/minis/skills/self-improving-agent/scrip…
-- `00:06` **LEARN 边后续（方案 B + 天花板）已登记进 backlog §48 —— 防遗忘的发现链**
-  - **用户明确担心「以后忘了」→ 已把后续工作登记进 canonical 待办册**：`/var/minis/shared/backlog.md` **§48**…
-- `00:07` **GLOBAL.md 新增「待办登记纪律（防遗忘）」第 21 节（10-02，用户拍板「现在就该升级了」）**
-  - **位置**：GLOBAL.md 第 53 行，夹在「修复门纪律」（P 级怎么定，其出口已写 = backlog + 升级触发条件）与「改动阶梯纪律」之间——顺…
-- `00:26` **遗忘层：设计已定稿并登记 §49，结论「停在等数据」（10-02，用户拍板）**
-  - **用户确认**：「现如今最好停在这里，等数据」——即只保留 SENSE 边（`mem-budget`），DECIDE 及以下全部等 §48 方案 B 与容量触…
-- `08:46` **WorkBuddy2API-Android 第一刀：粘性会话 + 排除名单 failover 完成（10-03，CI 绿停未合并）**
-  - **对象**：***OWNER***/WorkBuddy2API-Android 分支 `feat/sticky-session-exclusion-fai…
-- `08:57` **WorkBuddy2API-Android 第二刀：上游池 + 模型名路由完成（10-03，两刀 CI 全绿停，未合并）**
-  - **分支** `feat/sticky-session-exclusion-failover` 现两个 commit：fcee1f8c（第一刀粘性+排除名单）+…
-- `09:04` **WorkBuddy2API-Android：本地证据链补齐（10-03，harness @ d168092，CI 绿停）**
-  - **分支** `feat/sticky-session-exclusion-failover` 三 commit：fcee1f8c（粘性+排除名单）+ b0eb…
-- `09:11` **WorkBuddy2API-Android 合并 main（10-03，用户放行「合并后安装包含所有改动方便验证」，merge 00c89bf）**
-  - **合并**：--no-ff `00c89bf`（父 fdd6d2c + d168092），合并树 vs 分支 tip 树 SHA 逐字符一致（63947386…
-- `09:26` **诊断（10-03，用户报 127.0.0.1:8788 用不了）：8788 = WorkBuddy2API 本地端口（c**
-  - **诊断（10-03，用户报 127.0.0.1:8788 用不了）**：8788 = WorkBuddy2API 本地端口（com.joy4fire.work…
-- `09:34` **WorkBuddy2API「拉不下来模型列表」根因（10-03，cgroup freezer 实锤）：服务/key/模型**
-  - **WorkBuddy2API「拉不下来模型列表」根因（10-03，cgroup freezer 实锤）**：服务/key/模型目录全正常；根因 = Hyper…
-- `10:56` **交接：WorkBuddy2API-Android → Antigravity 原生适配器（10-03 会话末尾，WIP 分支）**
-  - **交接文档（下个会话第一件事读这个）**：`/var/minis/shared/HANDOFF-2026-10-03-wb2api-antigravity.m…
-- `11:59` **方向关闭：WorkBuddy2API Antigravity 原生适配器（10-03，用户拍板放弃）**
-  - **用户原话**：「仔细想了一下，算了，不搞这个了……直接用别人做好的，可能是个更好的选择。」
-- `20:49` **cmfa 分支 fix/cf-optimizer-hardening CI 失败已修（10-03，commit 096a19f，run 19 green）**
-  - **根因链（4 连失败 = 缺本地编译回路的典型症状）**：沙箱无 Android SDK，并行会话（3700b9bf）只能靠 CI 当编译器，4 次 push…
-- `20:54` **cmfa 分支 fix/cf-optimizer-hardening 已合并 main（10-03，merge 91d0**
-  - # cmfa 分支 fix/cf-optimizer-hardening 已合并 main（10-03，merge 91d019f，main=91d019f）
-- `22:24` **agent 执行失误盘点完成（10-03，314 条全量编码）**
-  - # agent 执行失误盘点完成（10-03，314 条全量编码）
-- `22:33` **cmfa 分支 fix/cf-source-concurrency-1003 核查通过（10-03，CI 绿停，未合并）**
-  - # cmfa 分支 fix/cf-source-concurrency-1003 核查通过（10-03，CI 绿停，未合并）
-- `22:36` **gh_sync.sh 四处硬化已落地并实测（10-03，用户拍板「该处理的处理」）**
-  - # gh_sync.sh 四处硬化已落地并实测（10-03，用户拍板「该处理的处理」）
-- `22:37` **cmfa 分支 fix/cf-source-concurrency-1003 已合并 main（10-03，merge**
-  - # cmfa 分支 fix/cf-source-concurrency-1003 已合并 main（10-03，merge 8864c79，main=8864c…
-- `22:45` **PRoot 本地 git 传输食谱（10-03 三轮对照探针实测定案）**
-  - # PRoot 本地 git 传输食谱（10-03 三轮对照探针实测定案）
-- `22:52` **沙箱缺陷注册表落地（10-03，用户拍板「按你建议的来」）**
-  - # 沙箱缺陷注册表落地（10-03，用户拍板「按你建议的来」）
 - `23:55` **「散落资产 → 下沉到代码层」盘点（10-03，用户问：有哪些散落在脚本/记忆中的可以下沉到 app 自带代码）**
   - # 「散落资产 → 下沉到代码层」盘点（10-03，用户问：有哪些散落在脚本/记忆中的可以下沉到 app 自带代码）
 
@@ -3247,3 +3201,79 @@
   - **对象**：用户发来一篇"2026 下半年智能体记忆/压缩研究"文章（arxiv 2608.22752 + Mem0 blog 等），要求对比 RikkaMi…
 - `23:48` **定时任务 L0 施工完成（feat/scheduled-tasks-l0-1004，CI 绿，待真机清单）**
   - 续接中断会话（HANDOFF-2026-10-04）完成简报 B 全部施工，交付报告 `shared/work/rk-sched-1004/DELIVERY-R…
+
+## 2026-10-05（29 条）
+
+- `07:46` **feat/scheduled-tasks-l0-1004 已合并 main（10-05，merge 4f40e4af，main=4f40e4af）**
+  - **合并前核查三项全过**：①diff 28 文件逐文件过（21 代码/测试 + 4 docs，CompactCancelOnStopTest/SandboxD…
+- `07:56` **压缩实验收尾 + 任务书 C（2026-10-05）**
+  - - 压缩衰减实验（compact-exp-1004）v1/v2b 均完成：埋入曲线归一化后 bare/pin 两臂 6 轮零衰减；负控 0/10。核心结论：压缩…
+- `08:24` **压缩实验 D+E 收官：阳性对照成立 + 视界实锤（2026-10-05）**
+  - - D（衰减阳性对照，10 轮）：真值 R1 声明一次 + 变体冲刷 → R1 10/10 → R2 即 0/10，且答案**确定性漂移成最近变体**（覆盖而非…
+- `08:27` **任务书 C 执行完成：压缩摘要截断守卫 + 吵闹候选 60s 预算（fix/compact-truncation-guard-1005，CI 绿停）**
+  - **状态：分支 CI 绿 @ tip，确定性停止节点已达成，未合并（合并权在用户）。**
+- `08:29` **压缩改进任务书 C/D 状态（2026-10-05）**
+  - - 任务书 C（stopReason=length 截断守卫 + 吵闹候选 60s 预算）已派发并施工完毕：分支 `fix/compact-truncation…
+- `09:42` **任务书 D 执行完成：压缩遥测 + SUPERSEDED 条款（fix/compact-telemetry-superseded-1005，CI 进行中）**
+  - **状态：两个 commit 已推远端 + CI 已 dispatch（run 37252315441），独立会话执行任务书 D 全文。**
+- `09:56` **任务书 D 执行完成（终态）：CI 绿 @ tip，确定性停止节点达成，未合并（合并权在用户）**
+  - **分支 `fix/compact-telemetry-superseded-1005` @ `e71342ca`（本地==远端==CI head_sha 逐字…
+- `10:07` **2026-10-05 compact 分支合并完成（用户令：检查今天分支修改，没问题就合并）**
+  - **任务**：今天未合并分支 = C（fix/compact-truncation-guard-1005 @6bdcff5）+ D（fix/compact-te…
+- `10:56` **RikkaMinis 主 clone 全景调查 + defect-registry 分支处理完毕（用户追问触发）**
+  - **用户问**：feat/defect-registry-recall-1003 是干什么的？是不是忘了删的？
+- `10:59` **RikkaMinis 主 clone 清理执行完成（10-05，用户令「清理」）**
+  - **执行**：8 支已合并残支全部删除——tier1=f5009adf、fastio-2=d74a49c1、fastio-3=0080f420、offload=…
+- `11:05` **远端 3 旧支 + rk-compact 残支清理完成（10-05 第二轮，用户令「旧的已合并的没用了，处理了吧」）**
+  - **执行**：远端 3 支全删——fix/compact-truncation-guard-1005（6bdcff5）、fix/compact-telemetr…
+- `15:29` **应用功能缺口盘点完成（10-05，用户令「看看这应用还有什么功能缺口、哪方面需要强化」）**
+  - **报告**：`/var/minis/shared/work/app-gap-audit-1005/REPORT.md`（审计产出，未改产品代码）。
+- `16:19` **压缩体系剩余队列 → 三份任务书（10-05，用户令「处理成任务，我手动派发」）**
+  - - **E** pin v0（约束钉住）：`/var/minis/shared/work/task-brief-1005-E-compact-pin-v0.md…
+- `16:45` **交付物（单 commit，3 文件 +442/−3）**
+  - # 任务书 E 执行完成（终态）：pin v0 已交付，分支 CI 绿 @ tip，未合并（合并权在用户）
+- `16:48` **任务 G 执行完成：SUPERSEDED 条款回归 PASS（零代码，D-repeat @ 生产 prompt 复跑）**
+  - # 任务 G 执行完成：SUPERSEDED 条款回归 PASS（零代码，D-repeat @ 生产 prompt 复跑）
+- `17:37` **EXHAUSTED 停摆救援交付（任务书 F，2026-10-05）**
+  - - 分支 `fix/compact-exhausted-rescue-1005` @ `b1a2266c`（C1 `959dfe96` 救援行为 / C3 `b…
+- `17:41` **压缩三任务收口（10-05 主会话独立核验，用户令「结果都出来了」）**
+  - **核验（三源全过）**：①CI run 37284048540（E）/37289317688（F）均 success，head_sha 与分支 tip 逐字符…
+- `18:35` **压缩体系 E/F 两分支核查并合并 main（10-05，用户令「检查，没问题就合并，有问题就改」）**
+  - **结果**：两分支均通过 6.5 全套 8 项核查 → 合并 main，main CI 绿。
+- `19:26` **新包（6f357dc8）运行时验证巡检结果（10-05 19:20）**
+  - **前提确认**：18:37 装包波后当前 build=main 终态 6f357dc8（C+D+E+F 全量），本会话（pid 13325）即跑在该包上；rk…
+- `19:38` **底子盘点数据：fork vs 上游 OpenMinis（10-05 实测，二次开发视角）**
+  - - 上游参照 = openminis-ref 快照 @ v1.14（b4c0661，2026-09-29，单 commit 快照仓）；fork 基线 = 上游 …
+- `19:53` **代码膨胀实测（10-05，基线=包名改名点 e24ca02b 09-10）**
+  - - 测量坑两个：①浅仓 graft 假象（fastio/quiet-first 等 merge 节点被当根，numstat 把整树算新增——jieba +69万…
+- `19:57` **五大文件拆分评估（10-05，二次开发视角，基线数据实测）**
+  - - 热度（25d commits / 7d / churn行）：ChatSessionLifecycle 33/10/808（唯一近期高热）；ChatViewM…
+- `20:05` **任务书 H 派发就绪 + 拆分策略登记（10-05）**
+  - - 任务书 H 已写好待手动派发：`/var/minis/shared/work/task-brief-1005-H-compact-orchestration…
+- `21:24` **H 执行会话压缩实证 + 预算判定核实（10-05 晚，新包 6f357dc8）**
+  - - 新包首次完整压缩 ×2（20:59 / 21:08，H 执行会话触发）：候选链 1/4 glm-5.3-flash 30s 超时 → 2/4 deepsee…
+- `22:01` **任务书 H 交付：ChatSessionLifecycle 拆分完成，分支 CI 绿（10-05）**
+  - - **结果**：`refactor/compact-orchestration-split-1005` @ `68f83ee6`（2 commits：39e4…
+- `22:02` **21:32 压缩失败事件还原 + ponytail 天花板命中（10-05 晚）**
+  - - 时间线：20:59/21:08/21:27 三轮压缩全成功（链=1/4→3/4 fallback，active=大写 GLM-5.3-Flash XHIGH…
+- `22:06` **backlog 新增：压缩候选链 entry 级预算覆盖（10-05 晚，用户拍板「先攒着」）**
+  - - **触发依据（已满足升级条件）**：小写 glm-5.3-flash（tierflow entry 0df664ef，declared=low|high|m…
+- `22:43` **H 分支核查并合并 main（10-05 晚，用户令「检查+有问题修+没问题合并」）**
+  - **对象**：`refactor/compact-orchestration-split-1005` @ `68f83ee6`（ChatSessionLifec…
+- `23:05` **压缩专用模型组分析（用户问「是否有必要给自动压缩专门开一个模型组/专用模型」）：**
+  - **压缩专用模型组分析（用户问「是否有必要给自动压缩专门开一个模型组/专用模型」）**：
+
+## 2026-10-06（6 条）
+
+- `00:42` **压缩模型钉住功能施工完成（feat/compact-model-pin-1005 @ bba87f23，CI 绿，停在分**
+  - **压缩模型钉住功能施工完成（feat/compact-model-pin-1005 @ bba87f23，CI 绿，停在分支待用户）**
+- `01:28` **压缩模型 pin 分支（feat/compact-model-pin-1005）审查+修复+合并 main 完成（10-06 凌晨）**
+  - - **审查发现 2 缺陷（均修，commit f03b9a88）**：①`resolveCompactionPinProvider` 缺 `GroupRout…
+- `06:47` **分支：ui/polish-1006 @ 05f31a0b（2 commits：79d5956c 三处 UI 改动 + 0**
+  - **分支**：`ui/polish-1006` @ `05f31a0b`（2 commits：79d5956c 三处 UI 改动 + 05f31a0b 风格对齐…
+- `07:14` **ui/polish-1006 审查+合并 main + main CI 绿（10-06 早，「检查+有问题修+没问题合并」指令）**
+  - - **对象**：`ui/polish-1006` @05f31a0b（2 commits：①压缩模型行删「选择…」按钮→整行点击弹框；②与 LimitsSli…
+- `08:00` **定时任务"无法删除"修复（用户报告 → 根因+修复+分支 CI 绿，10-06 早）**
+  - - **症状**：用户报告「新加的那个定时任务怎么不能删除啊？」（07:42 新会话，"无法删除新增定时任务"）。
+- `08:22` **fix/scheduled-task-delete-1006 核查+合并 main（10-06 晚，「检查+有问题修+没问题合并」指令）**
+  - - **对象**：`fix/scheduled-task-delete-1006` @ 273aecc6（1 commit，单文件 ScheduledTaskE…
