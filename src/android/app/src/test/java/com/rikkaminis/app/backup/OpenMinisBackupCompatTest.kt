@@ -259,7 +259,8 @@ class OpenMinisBackupCompatTest {
             SecretKeySpec(key, "AES"),
             GCMParameterSpec(128, byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
         )
-        cipher.updateAAD(memberName.toByteArray(StandardCharsets.UTF_8))
+        // AAD 绑定 "成员名#段号"（BackupCrypto.aad()：路径含 .enc 后缀，段号从 0 起）
+        cipher.updateAAD("$memberName#0".toByteArray(StandardCharsets.UTF_8))
         val sealed = cipher.doFinal(raw) // ct ‖ tag
         val out = ByteArrayOutputStream()
         out.write("MBK1".toByteArray(StandardCharsets.US_ASCII))
