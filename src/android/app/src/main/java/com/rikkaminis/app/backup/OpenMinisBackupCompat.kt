@@ -148,11 +148,21 @@ object OpenMinisBackupCompat {
                 JSONObject(String(manifestBytes, Charsets.UTF_8))
             }.getOrNull() ?: throw MinisBakException("manifest.json 不是合法 JSON")
 
-            val format = manifest.optString("format", "")
-            if (format != "minisbak/1") {
-                throw MinisBakException(
-                    "未知的备份格式 \"$format\"（仅支持 minisbak/1）",
-                )
+            // OpenMinis 的 manifest 用 kotlinx.serialization 写出，且
+            // BackupFormat.json 没开 encodeDefaults —— `format` 的默认值恰好
+            // 就是 "minisbak/1"，所以**真实包里通常根本没有这个键**（实测
+            // OpenMinis 1.14 build 28 导出的包：manifest 顶层只有
+            // created_at/snapshot_at/app/device_name/backup_id/categories/
+            // integrity）。早期这里用 optString("format","") 取值再跟
+            // "minisbak/1" 硬比，等于把 100% 的真实包全部拒掉。
+            // 现在只在"字段存在且不是 minisbak/1"时拒绝。
+            if (manifest.has("format")) {
+                val format = manifest.optString("format", "")
+                if (format.isNotEmpty() && format != "minisbak/1") {
+                    throw MinisBakException(
+                        "未知的备份格式 \"$format\"（仅支持 minisbak/1）",
+                    )
+                }
             }
 
             val enc = manifest.optJSONObject("encryption")
@@ -252,6 +262,19 @@ object OpenMinisBackupCompat {
         }
         val key = if (name == "secrets.json") keys.secretsKey else keys.dataKey
         return decryptMbk1(enc.readBytes(), key, "$name.enc")
+    }
+
+    /**
+     * 读内容寻址 blob。OpenMinis 的落盘路径是**两级分片**
+     * `blobs/<sha[:2]>/<sha256>`（BackupBlobStore.blobFile：
+     * `File(File(blobsRoot, digest.take(2)), digest)`），不是扁平的
+     * `blobs/<sha>`。分片 fan-out 是为了不让单个目录堆几万个文件。
+     * 两种布局都试：分片优先，找不到再退回扁平（更老的包）。
+     */
+    private fun readBlob(work: File, keys: Keys?, sha: String): ByteArray? {
+        if (sha.length < 2) return null
+        return readMember(work, keys, "blobs/${sha.take(2)}/$sha")
+            ?: readMember(work, keys, "blobs/$sha")
     }
 
     // ------------------------------------------------------------------
@@ -555,15 +578,25 @@ object OpenMinisBackupCompat {
         includeSecrets: Boolean,
     ): JSONArray {
         val out = JSONArray()
-        val envMeta = readMember(work, keys, "data/env_vars.json")
-            ?.let { runCatching { JSONObject(String(it, Charsets.UTF_8)) }.getOrNull() }
-            ?: return out
+        val raw = readMember(work, keys, "data/env_vars.json") ?: return out
+        // OpenMinis 的 data/env_vars.json 是**顶层数组**
+        // （[{id,key,note,createdAt},…]），没有 wrapper 对象；老包可能是
+        // {"entries":[…]}。早先这里无条件 JSONObject(text) → 抛异常 →
+        // getOrNull() → null → ?: return out，把 29 条环境变量静默丢成 0 条。
+        val arr: JSONArray = runCatching {
+            val t = String(raw, Charsets.UTF_8).trim()
+            if (t.startsWith("[")) {
+                JSONArray(t)
+            } else {
+                JSONObject(t).optJSONArray("entries") ?: JSONArray()
+            }
+        }.getOrElse { JSONArray() }
         val secretValues = HashMap<String, String>()
         if (includeSecrets && secrets != null) {
-            val arr = secrets.optJSONArray("envVars")
-            if (arr != null) {
-                for (i in 0 until arr.length()) {
-                    val s = arr.optJSONObject(i) ?: continue
+            val sarr = secrets.optJSONArray("envVars")
+            if (sarr != null) {
+                for (i in 0 until sarr.length()) {
+                    val s = sarr.optJSONObject(i) ?: continue
                     val name = s.optString("name", "")
                     if (name.isEmpty()) continue
                     secretValues[name] = runCatching {
@@ -572,7 +605,6 @@ object OpenMinisBackupCompat {
                 }
             }
         }
-        val arr = envMeta.optJSONArray("entries") ?: JSONArray()
         for (i in 0 until arr.length()) {
             val e = arr.optJSONObject(i) ?: continue
             val key = e.optString("key", "")
@@ -621,7 +653,7 @@ object OpenMinisBackupCompat {
                         // STORED：OpenMinis 的包本身不压缩，这里保持一致
                         zos.setMethod(ZipOutputStream.STORED)
                         for ((rel, sha) in files.sortedBy { it.first }) {
-                            val blob = readMember(work, keys, "blobs/$sha") ?: continue
+                            val blob = readBlob(work, keys, sha) ?: continue
                             val entry = ZipEntry(rel)
                             entry.size = blob.size.toLong()
                             entry.crc = CRC32().apply { update(blob) }.value
@@ -633,7 +665,7 @@ object OpenMinisBackupCompat {
                     bos.toByteArray()
                 }
                 val name = files.firstOrNull { it.first == "SKILL.md" }
-                    ?.let { (_, sha) -> readMember(work, keys, "blobs/$sha") }
+                    ?.let { (_, sha) -> readBlob(work, keys, sha) }
                     ?.let { bytes -> parseFrontmatterName(String(bytes, Charsets.UTF_8)) }
                     ?: skillId
                 out.put(

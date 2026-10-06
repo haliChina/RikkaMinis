@@ -60,8 +60,17 @@ class OpenMinisBackupCompatTest {
         MessageDigest.getInstance("SHA-256").digest(data)
             .joinToString("") { "%02x".format(it) }
 
+    /**
+     * 真实包形态：**不带 `format` 键**。OpenMinis 用 kotlinx.serialization 写
+     * manifest，而 `BackupFormat.json` 没开 `encodeDefaults`，`format` 的默认值
+     * 就是 "minisbak/1"，于是该字段在 JSON 里被整个省略。实测 OpenMinis 1.14
+     * build 28 导出的包，manifest 顶层只有 created_at / snapshot_at / app /
+     * device_name / backup_id / categories / integrity。
+     *
+     * 夹具曾经硬写 `.put("format","minisbak/1")`，让实现里"字段缺失即拒绝"
+     * 的 bug 永远测不出来 —— 夹具必须复刻真包，不是复刻想象。
+     */
     private fun plainManifest() = JSONObject()
-        .put("format", "minisbak/1")
         .put("created_at", "2026-10-01T08:30:00Z")
 
     private fun providerConfig(): JSONObject {
@@ -127,13 +136,15 @@ class OpenMinisBackupCompatTest {
             )
         )
 
-    private fun envVarsMeta() = JSONObject()
-        .put(
-            "entries",
-            JSONArray().put(
-                JSONObject().put("key", "MY_KEY").put("note", "测试").put("group", "")
-            )
-        )
+    /**
+     * 真实包形态：**顶层 JSON 数组**，没有 wrapper 对象
+     * （`[{id,key,note,createdAt},…]`）。夹具曾经写成 `{"entries":[…]}`，
+     * 于是"顶层是数组"这条真实路径从未被覆盖过。
+     */
+    private fun envVarsMeta() = JSONArray().put(
+        JSONObject().put("id", "ev-1").put("key", "MY_KEY")
+            .put("note", "测试").put("createdAt", "2026-09-01T00:00:00Z")
+    )
 
     private fun thinkingRulesLine() = JSONObject()
         .put("t", "ThinkingRuleV1")
@@ -206,10 +217,16 @@ class OpenMinisBackupCompatTest {
                     .put("size", script.size).put("sha256", shaPy).toString() +
                 "\n"
         )
+        /**
+         * 真实包形态：blob 落在**两级分片**路径 `blobs/<sha[:2]>/<sha256>`
+         * （BackupBlobStore.blobFile = File(File(blobsRoot, digest.take(2)),
+         * digest)），不是扁平的 `blobs/<sha>`。扁平布局的回退路径由
+         * [flatBlobLayoutStillImports] 单独覆盖。
+         */
         return listOf(
             "files.index.jsonl" to index,
-            "blobs/$shaMd" to skillMd,
-            "blobs/$shaPy" to script,
+            "blobs/${shaMd.take(2)}/$shaMd" to skillMd,
+            "blobs/${shaPy.take(2)}/$shaPy" to script,
         )
     }
 
@@ -230,7 +247,7 @@ class OpenMinisBackupCompatTest {
         members += "manifest.json" to jsonEntry(plainManifest())
         members += "data/provider_config.json" to jsonEntry(providerConfig())
         members += "data/thinking_rules.jsonl" to textEntry(thinkingRulesLine() + "\n")
-        members += "data/env_vars.json" to jsonEntry(envVarsMeta())
+        members += "data/env_vars.json" to textEntry(envVarsMeta().toString())
         members += "secrets.json" to jsonEntry(secretsJson())
         members += "data/mcp_servers.json" to jsonEntry(mcpJson())
         members += "data/memory/GLOBAL.md" to textEntry("全局记忆：偏好简洁回答。")
@@ -324,6 +341,65 @@ class OpenMinisBackupCompatTest {
                 "{\"format\":\"openminis.config.backup\"}".toByteArray()
             )
         )
+    }
+
+    @Test
+    fun acceptsManifestWithoutFormatKey() {
+        // 回归：真实包里没有 format 键（encodeDefaults=false）。曾经因为
+        // optString("format","") 取到空串而硬拒，等于 100% 拒收真包。
+        val pkg = zipOf("manifest.json" to jsonEntry(plainManifest()))
+        val root = JSONObject(OpenMinisBackupCompat.convert(pkg))
+        assertEquals("openminis.config.backup", root.getString("format"))
+    }
+
+@Test
+    fun envVarsTopLevelArrayIsAccepted() {
+        // 回归：data/env_vars.json 真实形态是顶层数组。实现曾无条件
+        // JSONObject(text)，解析失败后 ?: return out 把环境变量静默丢成 0 条。
+        val root = JSONObject(OpenMinisBackupCompat.convert(plainPackage()))
+        val ev = root.getJSONArray("envVars")
+        assertEquals(1, ev.length())
+        assertEquals("MY_KEY", ev.getJSONObject(0).getString("key"))
+        assertEquals("secret-value", ev.getJSONObject(0).getString("value"))
+    }
+
+    @Test
+    fun shardedBlobLayoutIsUsed() {
+        // 回归：blob 在 blobs/<sha[:2]>/<sha>。实现曾按扁平 blobs/<sha> 读，
+        // 结果每个技能的 archive 都是空 zip（readMember 返回 null 被 ?: continue
+        // 吞掉），导入后技能全空且不报错。
+        val root = JSONObject(OpenMinisBackupCompat.convert(plainPackage()))
+        val sk = root.getJSONArray("skills")
+        assertEquals(1, sk.length())
+        val archive = Base64.getDecoder().decode(sk.getJSONObject(0).getString("archive"))
+        val names = ArrayList<String>()
+        java.util.zip.ZipInputStream(archive.inputStream()).use { zis ->
+            var e: java.util.zip.ZipEntry? = zis.nextEntry
+            while (e != null) {
+                names.add(e.name)
+                zis.closeEntry()
+                e = zis.nextEntry
+            }
+        }
+        assertEquals(listOf("SKILL.md", "scripts/tool.py"), names.sorted())
+    }
+
+    @Test
+    fun flatBlobLayoutStillImports() {
+        // 回退路径：更老的包把 blob 平铺在 blobs/<sha>，仍要能导入。
+        val members = mutableListOf<Pair<String, ByteArray>>()
+        members += "manifest.json" to jsonEntry(plainManifest())
+        for ((name, data) in skillMembers()) {
+            members += if (name.startsWith("blobs/")) {
+                "blobs/" + name.substringAfterLast('/') to data
+            } else {
+                name to data
+            }
+        }
+        val root = JSONObject(OpenMinisBackupCompat.convert(zipOf(*members.toTypedArray())))
+        val sk = root.getJSONArray("skills")
+        assertEquals(1, sk.length())
+        assertEquals("web-summary", sk.getJSONObject(0).getString("id"))
     }
 
     @Test
