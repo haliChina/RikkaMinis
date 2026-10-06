@@ -403,6 +403,20 @@ class OpenMinisBackupCompatTest {
     }
 
     @Test
+    fun detectsEncryptedPackageWithoutASecret() {
+        // 回归：加密包必须在让用户输口令**之前**就被识别出来。
+        // requiresPassphrase 只流式读 manifest，不解成员。
+        assertFalse(
+            OpenMinisBackupCompat.requiresPassphrase(
+                zipOf("manifest.json" to jsonEntry(plainManifest()))
+            )
+        )
+        assertTrue(OpenMinisBackupCompat.requiresPassphrase(encryptedPackage("pw")))
+        // 非 ZIP 输入不炸，交给 convert() 报真错。
+        assertFalse(OpenMinisBackupCompat.requiresPassphrase("not a zip".toByteArray()))
+    }
+
+    @Test
     fun rejectsUnknownFormat() {
         val bad = zipOf(
             "manifest.json" to jsonEntry(JSONObject().put("format", "minisbak/2"))

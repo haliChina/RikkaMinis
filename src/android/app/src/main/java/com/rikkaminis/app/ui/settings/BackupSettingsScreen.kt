@@ -49,6 +49,7 @@ import com.rikkaminis.app.MinisApp
 import com.rikkaminis.app.R
 import com.rikkaminis.app.ui.components.sanitizeSingleLineInput
 import com.rikkaminis.app.backup.ConfigBackup
+import com.rikkaminis.app.backup.OpenMinisBackupCompat
 import com.rikkaminis.app.scheduled.ScheduledTasksStore
 import com.rikkaminis.app.backup.WebDavBackupItem
 import com.rikkaminis.app.backup.WebDavClient
@@ -108,6 +109,11 @@ fun BackupSettingsScreen(
     var showSecretWarning by remember { mutableStateOf(false) }
     var importReport by remember { mutableStateOf<ConfigBackup.ImportResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    // [fix-minisbak-import] OpenMinis .minisbak 恢复的两段式状态：先把包字节
+    // 挂在屏上，弹出令框，拿到口令后再转换。加密包的 PBKDF2 是 600k 轮，
+    // 必须放到 Dispatchers.IO。
+    var pendingMinisbakBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var passphraseText by remember { mutableStateOf("") }
 
     // ---- WebDAV remote backup state ----
     val webDavStore = remember { WebDavConfigStore(context) }
@@ -456,12 +462,35 @@ fun BackupSettingsScreen(
                         context.getString(R.string.backup_import_too_large, mb, maxMb),
                     )
                 }
-                val json = withContext(Dispatchers.IO) {
+                // [fix-minisbak-import] 读**字节**，不是文本。
+                //
+                // OpenMinis 的 .minisbak 是 ZIP 二进制包。原代码用
+                // bufferedReader().readText()：org.json 的 JSONTokener 是宽松
+                // 解析器，ZIP 头 PK\x03\x04 会被当成一个裸字符串字面量返回
+                // （不抛异常），as? JSONObject 得 null，于是 ConfigBackup.import
+                // 抛 "Backup root is not a JSON object" —— 真机上就是这个错。
+                // 兼容层之前根本没被任何地方调用，属于死代码。
+                //
+                // 字节不能先 String 化：UTF-8 解码 ZIP 会丢信息。
+                val bytes = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)
-                        ?.bufferedReader()?.readText()
+                        ?.use { it.readBytes() }
                         ?: throw IllegalStateException(errRead)
                 }
-                restoreWithSnapshot(json)
+                when {
+                    OpenMinisBackupCompat.looksLikeMinisBak(bytes) &&
+                        OpenMinisBackupCompat.requiresPassphrase(bytes) -> {
+                        passphraseText = ""
+                        pendingMinisbakBytes = bytes
+                    }
+                    OpenMinisBackupCompat.looksLikeMinisBak(bytes) ->
+                        restoreWithSnapshot(
+                            withContext(Dispatchers.IO) {
+                                OpenMinisBackupCompat.convert(bytes, null)
+                            },
+                        )
+                    else -> restoreWithSnapshot(String(bytes, Charsets.UTF_8))
+                }
             } catch (t: Throwable) {
                 errorMessage = t.message ?: errImport
             }
@@ -1124,6 +1153,61 @@ fun BackupSettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { deletePending = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
+    // [fix-minisbak-import] 加密 .minisbak 的口令输入。只在 manifest 里确实
+    // 有 encryption 段时才出现；明文包不打断用户。
+    pendingMinisbakBytes?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { pendingMinisbakBytes = null; passphraseText = "" },
+            title = { Text(stringResource(R.string.backup_passphrase_title)) },
+            text = {
+                Column {
+                    Text(
+                        stringResource(R.string.backup_passphrase_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.padding(top = 12.dp))
+                    OutlinedTextField(
+                        value = passphraseText,
+                        onValueChange = { passphraseText = it },
+                        label = { Text(stringResource(R.string.backup_passphrase_label)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = passphraseText.isNotEmpty(),
+                    onClick = {
+                        val pw = passphraseText.toCharArray()
+                        pendingMinisbakBytes = null
+                        passphraseText = ""
+                        operationBusy = true
+                        scope.launch {
+                            try {
+                                // PBKDF2 600k 轮 + 全包解密，必须离开主线程。
+                                val json = withContext(Dispatchers.IO) {
+                                    OpenMinisBackupCompat.convert(pending, pw)
+                                }
+                                restoreWithSnapshot(json)
+                            } catch (t: Throwable) {
+                                errorMessage = t.message ?: errImport
+                            } finally {
+                                pw.fill(' ')
+                                operationBusy = false
+                            }
+                        }
+                    },
+                ) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingMinisbakBytes = null; passphraseText = "" }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

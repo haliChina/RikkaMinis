@@ -120,6 +120,37 @@ object OpenMinisBackupCompat {
     }
 
     /**
+     * 只流式读一遍 ZIP 里的 `manifest.json`，判断这个包是否加密
+     * （`encryption` 段存在 = minisbak-enc/1）。不解包、不碰任何成员，
+     * 所以对 16MB 的加密包也是毫秒级。
+     *
+     * 存在的意义：**在**让用户输口令之前就知道该不该问。加密包没口令直接
+     * 调 [convert] 会在第一个成员上抛「需要口令」，那是在用户填完一屏
+     * 表单之后才告诉他填错地方了。
+     */
+    fun requiresPassphrase(packageBytes: ByteArray): Boolean {
+        if (!looksLikeMinisBak(packageBytes)) return false
+        return try {
+            var encrypted = false
+            ZipInputStream(packageBytes.inputStream().buffered()).use { zis ->
+                while (true) {
+                    val e = zis.nextEntry ?: break
+                    if (e.name == "manifest.json") {
+                        encrypted = JSONObject(String(zis.readBytes(), Charsets.UTF_8))
+                            .optJSONObject("encryption") != null
+                        break
+                    }
+                    zis.closeEntry()
+                }
+            }
+            encrypted
+        } catch (_: Throwable) {
+            // 探测失败不阻塞导入：交给 convert() 去报真错。
+            false
+        }
+    }
+
+    /**
      * 把 .minisbak 包字节转成 RikkaMinis ConfigBackup.import 可直接消费的
      * JSON 文档字符串。
      *
