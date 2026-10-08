@@ -74,10 +74,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Files
-import java.text.SimpleDateFormat
 import java.util.Base64
 import java.util.Locale
-import java.util.TimeZone
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -348,7 +346,13 @@ object OpenMinisBackupCompat {
                 ((raw[i + 2].toInt() and 0xFF) shl 8) or
                 (raw[i + 3].toInt() and 0xFF)
             i += 4
-            if (i + len > raw.size) throw MinisBakException("加密成员损坏：$aadPath")
+            // [fix-minisbak-compat] 段长下限 = 12 字节 nonce + 16 字节 GCM tag。
+            // 原先只查上界，len < 12 时 copyOfRange 的 from > to 会抛裸
+            // IllegalArgumentException（而非 MinisBakException），错误信息
+            // 绕开统一的"加密成员损坏"语义。
+            if (len < 12 + 16 || i + len > raw.size) {
+                throw MinisBakException("加密成员损坏：$aadPath")
+            }
             val nonce = raw.copyOfRange(i, i + 12)
             val body = raw.copyOfRange(i + 12, i + len)
             i += len
@@ -407,10 +411,15 @@ object OpenMinisBackupCompat {
         val s = v.toString().trim()
         if (s.isEmpty()) return null
         s.toLongOrNull()?.let { return it }
+        // [fix-minisbak-compat] OpenMinis 自家的 BackupRecordMapper.millis()
+        // 接受四种 ISO-8601 形态（有无毫秒小数 × 'Z'/时区偏移）；而
+        // kotlinx.serialization 的 Instant 在毫秒非零时序列化成
+        // "…T…SSS…Z"——真实包的时间戳几乎必然带小数位。原先只认整秒形态，
+        // 命不中就把 createdAt/updatedAt 静默归零、provider 落到 now()，
+        // 整条时间线在导入后失真。java.time 的 OffsetDateTime 一次覆盖
+        // 全部四种（含 3~9 位小数），minSdk 26 且项目其他处已用 java.time。
         return try {
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
-                .apply { timeZone = TimeZone.getTimeZone("UTC") }
-                .parse(s)?.time
+            java.time.OffsetDateTime.parse(s).toInstant().toEpochMilli()
         } catch (_: Exception) {
             null
         }

@@ -572,4 +572,71 @@ class OpenMinisBackupCompatTest {
             assertTrue(e.message!!.contains("口令"))
         }
     }
+
+    // ------------------------------------------------------------------
+    // [fix-minisbak-compat] 回归测试
+    // ------------------------------------------------------------------
+
+    @Test
+    fun isoToMillisAcceptsAllFourOpenMinisIsoShapes() {
+        // OpenMinis 自家的 BackupRecordMapper.millis() 接受四种 ISO 形态
+        //（有无毫秒小数 × 'Z'/时区偏移）。kotlinx Instant 序列化在毫秒
+        // 非零时输出 ".SSS"——真实包几乎必然带小数位。原先只认整秒形态，
+        // 命不中就把时间戳静默归零（createdAt/updatedAt=0、provider 落
+        // 到 now()），导入后整条时间线失真。
+        assertEquals(1780142405123L, OpenMinisBackupCompat.isoToMillis("2026-05-30T12:00:05.123Z"))
+        assertEquals(1780142405000L, OpenMinisBackupCompat.isoToMillis("2026-05-30T12:00:05Z"))
+        assertEquals(1780142405000L, OpenMinisBackupCompat.isoToMillis("2026-05-30T20:00:05+08:00"))
+        assertEquals(1780142405123L, OpenMinisBackupCompat.isoToMillis("2026-05-30T20:00:05.123+08:00"))
+        // 6 位小数（iOS Swift 常见输出）也必须能解析
+        assertEquals(1780142405123L, OpenMinisBackupCompat.isoToMillis("2026-05-30T12:00:05.123456Z"))
+        // 裸 epoch 与数值直通不受影响
+        assertEquals(1780142405000L, OpenMinisBackupCompat.isoToMillis(1780142405000L))
+        assertEquals(1780142405000L, OpenMinisBackupCompat.isoToMillis("1780142405000"))
+        // 垃圾输入仍返回 null（走调用方的回退）
+        assertEquals(null, OpenMinisBackupCompat.isoToMillis("not-a-date"))
+    }
+
+    @Test
+    fun truncatedEncryptedSegmentFailsCleanly() {
+        // 回归：段长 < nonce(12) + GCM tag(16) 时，copyOfRange 的
+        // from > to 会抛裸 IllegalArgumentException 而不是
+        // MinisBakException——错误语义绕开了统一的"加密成员损坏"。
+        val salt = ByteArray(16) { (it + 1).toByte() }
+        val kek = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+            .generateSecret(PBEKeySpec("pw".toCharArray(), salt, 1000, 256)).encoded
+        val manifest = plainManifest().put(
+            "encryption",
+            JSONObject()
+                .put("scheme", "minisbak-enc/1")
+                .put("kdf", JSONObject()
+                    .put("alg", "pbkdf2-hmac-sha256")
+                    .put("salt", Base64.getEncoder().encodeToString(salt))
+                    .put("iterations", 1000)),
+        )
+        val corrupt = ByteArrayOutputStream().apply {
+            write("MBK1".toByteArray(StandardCharsets.US_ASCII))
+            val len = 8 // 连 12 字节 nonce 都放不下
+            write(
+                byteArrayOf(
+                    ((len ushr 24) and 0xFF).toByte(),
+                    ((len ushr 16) and 0xFF).toByte(),
+                    ((len ushr 8) and 0xFF).toByte(),
+                    (len and 0xFF).toByte(),
+                ),
+            )
+            write(ByteArray(8))
+        }.toByteArray()
+        assert(kek.isNotEmpty())
+        val pkg = zipOf(
+            "manifest.json" to jsonEntry(manifest),
+            "data/provider_config.json.enc" to corrupt,
+        )
+        try {
+            OpenMinisBackupCompat.convert(pkg, "pw".toCharArray())
+            fail("截断的加密段应失败")
+        } catch (e: OpenMinisBackupCompat.MinisBakException) {
+            assertNotNull(e.message)
+        }
+    }
 }
