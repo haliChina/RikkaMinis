@@ -114,6 +114,12 @@ fun BackupSettingsScreen(
     // 必须放到 Dispatchers.IO。
     var pendingMinisbakBytes by remember { mutableStateOf<ByteArray?>(null) }
     var passphraseText by remember { mutableStateOf("") }
+    // [fix-minisbak-import] .minisbak 转换窗口的专用忙碌标记（与 operationBusy
+    // 双重门禁：转换期挡导入重入）。不能在恢复前一直占着 operationBusy——
+    // restoreWithSnapshot 的互斥守卫见 busy 就拒绝（backup_err_busy），那是
+    // 加密包导入"永远 busy"的根因；转换结束须在同一帧内让锁再交给
+    // restoreWithSnapshot（详见 convertAndRestore 注释）。
+    var minisbakConverting by remember { mutableStateOf(false) }
 
     // ---- WebDAV remote backup state ----
     val webDavStore = remember { WebDavConfigStore(context) }
@@ -343,6 +349,52 @@ fun BackupSettingsScreen(
         }
     }
 
+    // [fix-minisbak-import] .minisbak 转换 + 恢复交接的唯一入口：文件选择器
+    //（明文包）与口令对话框（加密包）都走这里。
+    //
+    // 为什么持有 operationBusy 又要在恢复前让出去：restoreWithSnapshot 的
+    // 互斥守卫见 busy 即拒（backup_err_busy）。原先加密路径在转换完成后仍占
+    // 着全局锁，恢复必然被拒——解密成果被"备份或恢复正在进行中"整个吞掉。
+    // 转换期间保持双重门禁（与本屏其他操作的既有语义一致）：minisbakConverting
+    // 挡导入重入，operationBusy 挡其他备份/恢复操作；恢复前在同一帧内让锁，
+    // 让出与调用之间没有挂起点，主线程上不会被打断，锁不外泄。
+    val convertAndRestore: (ByteArray, CharArray?) -> Unit = convertAndRestore@{ pkg, pw ->
+        if (operationBusy || minisbakConverting) return@convertAndRestore
+        minisbakConverting = true
+        operationBusy = true
+        scope.launch {
+            var handedOff = false
+            try {
+                // pw != null：口令对话框确认后的直接转换；pw == null：首次
+                // 嗅探（加密 → 弹口令框；明文 → 直接转换）。嗅探要流式读
+                // ZIP（扫到 manifest.json 才停），是 I/O，连同 PBKDF2 600k
+                // 轮 + 全包解密一起留在 Dispatchers.IO；状态写回在 Main。
+                val sniff = withContext(Dispatchers.IO) {
+                    if (pw != null) MinisbakImport.Plain(OpenMinisBackupCompat.convert(pkg, pw))
+                    else if (OpenMinisBackupCompat.requiresPassphrase(pkg)) MinisbakImport.Encrypted
+                    else MinisbakImport.Plain(OpenMinisBackupCompat.convert(pkg, null))
+                }
+                when (sniff) {
+                    MinisbakImport.Encrypted -> {
+                        passphraseText = ""
+                        pendingMinisbakBytes = pkg
+                    }
+                    is MinisbakImport.Plain -> {
+                        operationBusy = false
+                        handedOff = true
+                        restoreWithSnapshot(sniff.json)
+                    }
+                }
+            } catch (t: Throwable) {
+                errorMessage = t.message ?: errImport
+            } finally {
+                if (!handedOff) operationBusy = false
+                pw?.fill(' ')
+                minisbakConverting = false
+            }
+        }
+    }
+
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json"),
     ) { uri: Uri? ->
@@ -478,17 +530,10 @@ fun BackupSettingsScreen(
                         ?: throw IllegalStateException(errRead)
                 }
                 when {
-                    OpenMinisBackupCompat.looksLikeMinisBak(bytes) &&
-                        OpenMinisBackupCompat.requiresPassphrase(bytes) -> {
-                        passphraseText = ""
-                        pendingMinisbakBytes = bytes
-                    }
                     OpenMinisBackupCompat.looksLikeMinisBak(bytes) ->
-                        restoreWithSnapshot(
-                            withContext(Dispatchers.IO) {
-                                OpenMinisBackupCompat.convert(bytes, null)
-                            },
-                        )
+                        // [fix-minisbak-import] 嗅探/转换/恢复交接统一走
+                        // convertAndRestore（IO 线程 + 忙碌门禁 + 锁交接）。
+                        convertAndRestore(bytes, null)
                     else -> restoreWithSnapshot(String(bytes, Charsets.UTF_8))
                 }
             } catch (t: Throwable) {
@@ -682,7 +727,7 @@ fun BackupSettingsScreen(
                 title = stringResource(R.string.backup_import),
                 subtitle = stringResource(R.string.backup_import_sub),
                 icon = Icons.Default.Upload,
-                onClick = if (operationBusy) null else ({ importLauncher.launch(arrayOf("application/json", "*/*")) }),
+                onClick = if (operationBusy || minisbakConverting) null else ({ importLauncher.launch(arrayOf("application/json", "*/*")) }),
                 showDivider = false,
             )
         }
@@ -1188,21 +1233,13 @@ fun BackupSettingsScreen(
                         val pw = passphraseText.toCharArray()
                         pendingMinisbakBytes = null
                         passphraseText = ""
-                        operationBusy = true
-                        scope.launch {
-                            try {
-                                // PBKDF2 600k 轮 + 全包解密，必须离开主线程。
-                                val json = withContext(Dispatchers.IO) {
-                                    OpenMinisBackupCompat.convert(pending, pw)
-                                }
-                                restoreWithSnapshot(json)
-                            } catch (t: Throwable) {
-                                errorMessage = t.message ?: errImport
-                            } finally {
-                                pw.fill(' ')
-                                operationBusy = false
-                            }
-                        }
+                        // [fix-minisbak-import] 转换与恢复交接统一走
+                        // convertAndRestore：门禁、互斥锁、pw 清零都在那里收口。
+                        // 根因回顾：原先在这里预置 operationBusy = true，而
+                        // restoreWithSnapshot 的互斥守卫见 busy 即拒（
+                        // backup_err_busy）——解密成果被"备份或恢复正在进行中"
+                        // 整个吞掉，加密包导入永远到不了恢复那一步。
+                        convertAndRestore(pending, pw)
                     },
                 ) { Text(stringResource(R.string.ok)) }
             },
@@ -1875,3 +1912,12 @@ private fun formatSize(bytes: Long): String = when {
 }
 
 private fun formatInstant(instant: Instant): String = INSTANT_FORMATTER.format(instant)
+
+/** [fix-minisbak-import] .minisbak 嗅探的两路结果（在 IO 线程上判定）。 */
+private sealed interface MinisbakImport {
+    /** 包已加密，需要先向用户要口令再转换。 */
+    data object Encrypted : MinisbakImport
+
+    /** 明文包（或口令确认后），[json] 是转换完成的 RikkaMinis 备份文档。 */
+    data class Plain(val json: String) : MinisbakImport
+}
